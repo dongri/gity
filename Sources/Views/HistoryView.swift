@@ -92,7 +92,14 @@ struct HistoryView: View {
                     // Commit table
                     CommitTableView(
                         commits: filteredCommits,
-                        selectedCommit: $selectedCommit
+                        selectedCommit: $selectedCommit,
+                        hasMoreCommits: !repository.isInitializing && repository.hasMoreCommits,
+                        isLoadingMore: repository.isLoadingMoreCommits,
+                        onLoadMore: {
+                            Task {
+                                await repository.loadMoreCommits()
+                            }
+                        }
                     )
                 }
                 .frame(height: geometry.size.height * splitRatio)
@@ -205,6 +212,9 @@ struct HistoryView: View {
 struct CommitTableView: View {
     let commits: [GitCommit]
     @Binding var selectedCommit: GitCommit?
+    let hasMoreCommits: Bool
+    let isLoadingMore: Bool
+    let onLoadMore: () -> Void
     
     // Computed binding to avoid state sync issues
     private var selectionBinding: Binding<GitCommit.ID?> {
@@ -221,32 +231,54 @@ struct CommitTableView: View {
     }
     
     var body: some View {
-        Table(commits, selection: selectionBinding) {
-            TableColumn("Short S.") { commit in
-                HStack(spacing: 4) {
-                    // Refs badges
-                    ForEach(commit.refs, id: \.self) { ref in
-                        RefBadge(ref: ref)
+        VStack(spacing: 0) {
+            Table(commits, selection: selectionBinding) {
+                TableColumn("Short S.") { commit in
+                    HStack(spacing: 4) {
+                        // Refs badges
+                        ForEach(commit.refs, id: \.self) { ref in
+                            RefBadge(ref: ref)
+                        }
+                        
+                        Text(commit.shortSha)
+                            .font(.system(.body, design: .monospaced))
+                            .foregroundColor(.secondary)
                     }
-                    
-                    Text(commit.shortSha)
-                        .font(.system(.body, design: .monospaced))
+                    .onAppear {
+                        // Auto-load more when the last commit becomes visible
+                        if commit.id == commits.last?.id && hasMoreCommits && !isLoadingMore {
+                            onLoadMore()
+                        }
+                    }
+                }
+                .width(min: 80, ideal: 120)
+                
+                TableColumn("Subject", value: \.subject)
+                    .width(min: 200, ideal: 400)
+                
+                TableColumn("Author", value: \.author)
+                    .width(min: 100, ideal: 150)
+                
+                TableColumn("Date") { commit in
+                    Text(commit.dateString)
                         .foregroundColor(.secondary)
                 }
+                .width(min: 120, ideal: 180)
             }
-            .width(min: 80, ideal: 120)
             
-            TableColumn("Subject", value: \.subject)
-                .width(min: 200, ideal: 400)
-            
-            TableColumn("Author", value: \.author)
-                .width(min: 100, ideal: 150)
-            
-            TableColumn("Date") { commit in
-                Text(commit.dateString)
-                    .foregroundColor(.secondary)
+            // Loading indicator at bottom (shown during auto-load)
+            if isLoadingMore && hasMoreCommits {
+                HStack {
+                    ProgressView()
+                        .scaleEffect(0.7)
+                    Text("Loading more commits...")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(8)
+                .frame(maxWidth: .infinity)
+                .background(Color(nsColor: .controlBackgroundColor))
             }
-            .width(min: 120, ideal: 180)
         }
     }
 }

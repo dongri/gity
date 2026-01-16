@@ -8,7 +8,7 @@
 import Foundation
 
 struct GitCommit: Identifiable, Hashable {
-    let id = UUID()
+    var id: String { sha }
     let sha: String
     let shortSha: String
     let subject: String
@@ -45,7 +45,7 @@ struct GitCommit: Identifiable, Hashable {
         let refNames = parts.count > 7 ? parts[7] : ""
         
         let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        formatter.formatOptions = [.withInternetDateTime]
         let date = formatter.date(from: dateString) ?? Date()
         
         // Parse refs

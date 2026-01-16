@@ -33,6 +33,7 @@ class GitRepository: ObservableObject {
     // Loading states for UI feedback
     @Published var isLoadingRefs: Bool = false
     @Published var isLoadingCommits: Bool = false
+    @Published var isLoadingMoreCommits: Bool = false
     @Published var isLoadingIndex: Bool = false
     @Published var isInitializing: Bool = true
     
@@ -110,7 +111,7 @@ class GitRepository: ObservableObject {
         isInitializing = false
         
         // Load commits after UI is responsive
-        await loadCommitsAsync(limit: initialCommitLimit)
+        await loadCommits()
         
         // Load secondary data in background (stashes, submodules)
         Task {
@@ -310,13 +311,16 @@ class GitRepository: ObservableObject {
     }
     
     // MARK: - Commit Loading (Async)
+    private let commitBatchSize: Int = 200
+    @Published var hasMoreCommits: Bool = true
+    
     @MainActor
-    func loadCommits(limit: Int = 200) async {
-        await loadCommitsAsync(limit: limit)
+    func loadCommits() async {
+        await loadCommitsAsync(limit: commitBatchSize)
     }
     
     @MainActor
-    func loadCommitsAsync(limit: Int = 200) async {
+    func loadCommitsAsync(limit: Int) async {
         isLoadingCommits = true
         defer { isLoadingCommits = false }
         
@@ -337,20 +341,25 @@ class GitRepository: ObservableObject {
         }
         
         let output = await runGitAsync(args)
-        commits = output.components(separatedBy: "\n")
+        let loadedCommits = output.components(separatedBy: "\n")
             .filter { !$0.isEmpty }
             .compactMap { GitCommit.from(logLine: $0) }
+        
+        commits = loadedCommits
+        hasMoreCommits = loadedCommits.count >= limit
     }
     
     @MainActor
-    func loadMoreCommits(currentCount: Int, batchSize: Int = 200) async {
-        guard !isLoadingCommits else { return }
-        isLoadingCommits = true
-        defer { isLoadingCommits = false }
+    func loadMoreCommits() async {
+        guard !isLoadingMoreCommits && !isLoadingCommits && hasMoreCommits else { return }
         
-        let newLimit = currentCount + batchSize
+        isLoadingMoreCommits = true
+        defer { isLoadingMoreCommits = false }
+        
+        let previousCount = commits.count
+        let newLimit = previousCount + commitBatchSize
         let format = "%H|%h|%s|%an|%ae|%aI|%P|%D"
-        let args: [String]
+        var args: [String]
         
         switch currentBranchFilter {
         case .all:
@@ -366,9 +375,12 @@ class GitRepository: ObservableObject {
         }
         
         let output = await runGitAsync(args)
-        commits = output.components(separatedBy: "\n")
+        let loadedCommits = output.components(separatedBy: "\n")
             .filter { !$0.isEmpty }
             .compactMap { GitCommit.from(logLine: $0) }
+        
+        commits = loadedCommits
+        hasMoreCommits = loadedCommits.count > previousCount
     }
     
     // MARK: - Git Operations (All Async)
@@ -422,7 +434,7 @@ class GitRepository: ObservableObject {
         _ = await MainActor.run {
             Task {
                 await self.reloadIndexAsync()
-                await self.loadCommitsAsync()
+                await self.loadCommits()
             }
         }
     }
@@ -435,7 +447,7 @@ class GitRepository: ObservableObject {
         _ = await MainActor.run {
             Task {
                 await self.loadRefsInBackground()
-                await self.loadCommitsAsync()
+                await self.loadCommits()
             }
         }
     }
@@ -520,7 +532,7 @@ class GitRepository: ObservableObject {
         _ = await MainActor.run {
             Task {
                 await self.loadRefsInBackground()
-                await self.loadCommitsAsync()
+                await self.loadCommits()
             }
         }
     }
@@ -540,7 +552,7 @@ class GitRepository: ObservableObject {
         _ = await MainActor.run {
             Task {
                 await self.reloadAll()
-                await self.loadCommitsAsync()
+                await self.loadCommits()
             }
         }
     }
@@ -683,10 +695,12 @@ class GitRepository: ObservableObject {
         
         do {
             try process.run()
-            process.waitUntilExit()
             
+            // Read data BEFORE waiting for exit to prevent deadlock when buffer fills up
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             let errorData = errorPipe.fileHandleForReading.readDataToEndOfFile()
+            
+            process.waitUntilExit()
             
             let output = String(data: data, encoding: .utf8) ?? ""
             let errorOutput = String(data: errorData, encoding: .utf8) ?? ""
