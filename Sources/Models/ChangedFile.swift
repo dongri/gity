@@ -7,6 +7,7 @@
 
 import Foundation
 import AppKit
+import UniformTypeIdentifiers
 
 enum FileStatus: String {
     case modified = "M"
@@ -83,7 +84,11 @@ struct ChangedFile: Identifiable, Hashable {
     }
     
     var icon: NSImage {
-        return NSWorkspace.shared.icon(forFileType: (path as NSString).pathExtension)
+        let ext = (path as NSString).pathExtension
+        if !ext.isEmpty, let type = UTType(filenameExtension: ext) {
+            return NSWorkspace.shared.icon(for: type)
+        }
+        return NSWorkspace.shared.icon(for: .data)
     }
     
     func hash(into hasher: inout Hasher) {

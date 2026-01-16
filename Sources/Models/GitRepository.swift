@@ -375,7 +375,7 @@ class GitRepository: ObservableObject {
     func stage(files: [ChangedFile]) async throws {
         let paths = files.map { $0.path }
         _ = await runGitAsync(["add", "--"] + paths)
-        await MainActor.run {
+        _ = await MainActor.run {
             Task {
                 await self.reloadIndexAsync()
             }
@@ -385,7 +385,7 @@ class GitRepository: ObservableObject {
     func unstage(files: [ChangedFile]) async throws {
         let paths = files.map { $0.path }
         _ = await runGitAsync(["reset", "HEAD", "--"] + paths)
-        await MainActor.run {
+        _ = await MainActor.run {
             Task {
                 await self.reloadIndexAsync()
             }
@@ -403,7 +403,7 @@ class GitRepository: ObservableObject {
             try? FileManager.default.removeItem(at: workingDirectory.appendingPathComponent(file.path))
         }
         
-        await MainActor.run {
+        _ = await MainActor.run {
             Task {
                 await self.reloadIndexAsync()
             }
@@ -419,7 +419,7 @@ class GitRepository: ObservableObject {
         if output.contains("error") || output.contains("fatal") {
             throw GitError.commitFailed(output)
         }
-        await MainActor.run {
+        _ = await MainActor.run {
             Task {
                 await self.reloadIndexAsync()
                 await self.loadCommitsAsync()
@@ -432,7 +432,7 @@ class GitRepository: ObservableObject {
         if output.contains("error") || output.contains("fatal") {
             throw GitError.checkoutFailed(output)
         }
-        await MainActor.run {
+        _ = await MainActor.run {
             Task {
                 await self.loadRefsInBackground()
                 await self.loadCommitsAsync()
@@ -449,7 +449,7 @@ class GitRepository: ObservableObject {
         if output.contains("error") || output.contains("fatal") {
             throw GitError.branchCreationFailed(output)
         }
-        await MainActor.run {
+        _ = await MainActor.run {
             Task {
                 await self.loadRefsInBackground()
             }
@@ -470,7 +470,7 @@ class GitRepository: ObservableObject {
         if output.contains("error") || output.contains("fatal") {
             throw GitError.tagCreationFailed(output)
         }
-        await MainActor.run {
+        _ = await MainActor.run {
             Task {
                 await self.loadRefsInBackground()
             }
@@ -499,7 +499,7 @@ class GitRepository: ObservableObject {
         if output.contains("error") || output.contains("fatal") {
             throw GitError.deleteFailed(output)
         }
-        await MainActor.run {
+        _ = await MainActor.run {
             Task {
                 await self.loadRefsInBackground()
             }
@@ -517,7 +517,7 @@ class GitRepository: ObservableObject {
         if output.contains("fatal") {
             throw GitError.fetchFailed(output)
         }
-        await MainActor.run {
+        _ = await MainActor.run {
             Task {
                 await self.loadRefsInBackground()
                 await self.loadCommitsAsync()
@@ -537,7 +537,7 @@ class GitRepository: ObservableObject {
         if output.contains("fatal") || output.contains("CONFLICT") {
             throw GitError.pullFailed(output)
         }
-        await MainActor.run {
+        _ = await MainActor.run {
             Task {
                 await self.reloadAll()
                 await self.loadCommitsAsync()
@@ -568,7 +568,7 @@ class GitRepository: ObservableObject {
             args += ["-m", message]
         }
         _ = await runGitAsync(args)
-        await MainActor.run {
+        _ = await MainActor.run {
             Task {
                 await self.reloadStashesAsync()
                 await self.reloadIndexAsync()
@@ -585,7 +585,7 @@ class GitRepository: ObservableObject {
         if output.contains("CONFLICT") {
             throw GitError.stashConflict(output)
         }
-        await MainActor.run {
+        _ = await MainActor.run {
             Task {
                 await self.reloadStashesAsync()
                 await self.reloadIndexAsync()
@@ -602,7 +602,7 @@ class GitRepository: ObservableObject {
         if output.contains("CONFLICT") {
             throw GitError.stashConflict(output)
         }
-        await MainActor.run {
+        _ = await MainActor.run {
             Task {
                 await self.reloadIndexAsync()
             }
@@ -611,7 +611,7 @@ class GitRepository: ObservableObject {
     
     func stashDrop(stash: GitStash) async throws {
         _ = await runGitAsync(["stash", "drop", "stash@{\(stash.index)}"])
-        await MainActor.run {
+        _ = await MainActor.run {
             Task {
                 await self.reloadStashesAsync()
             }
@@ -655,13 +655,10 @@ class GitRepository: ObservableObject {
     
     /// Async git command execution - runs on background thread
     func runGitAsync(_ arguments: [String]) async -> String {
+        let workDir = workingDirectory
         return await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-                guard let self = self else {
-                    continuation.resume(returning: "")
-                    return
-                }
-                let result = self.runGitSync(arguments)
+            DispatchQueue.global(qos: .userInitiated).async {
+                let result = Self.executeGit(arguments: arguments, workingDirectory: workDir)
                 continuation.resume(returning: result)
             }
         }
@@ -669,6 +666,11 @@ class GitRepository: ObservableObject {
     
     /// Synchronous git execution - only use from background threads
     private func runGitSync(_ arguments: [String]) -> String {
+        return Self.executeGit(arguments: arguments, workingDirectory: workingDirectory)
+    }
+    
+    /// Static helper for running git commands to avoid self capture in closures
+    private static func executeGit(arguments: [String], workingDirectory: URL) -> String {
         let process = Process()
         let pipe = Pipe()
         let errorPipe = Pipe()
