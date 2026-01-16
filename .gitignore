@@ -1,0 +1,32 @@
+# Xcode
+.DS_Store
+*/.DS_Store
+*.swp
+*.lock
+*~.nib
+
+# Xcode user settings
+xcuserdata/
+
+# Swift Package Manager
+.build/
+Packages/
+Package.resolved
+
+# Xcode generated files
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Xcode workspace
+*.xcworkspace
+!default.xcworkspace
+
+# Xcode project settings to ignore
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+
+# Playground
+*.playgroundtimeline
