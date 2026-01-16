@@ -31,7 +31,7 @@ struct WelcomeView: View {
             // Actions
             HStack(spacing: 20) {
                 ActionButton(title: "Open Repository", icon: "folder", action: openRepository)
-                ActionButton(title: "Clone Repository", icon: "arrow.down.circle", action: cloneRepository)
+
             }
             
             Spacer()
@@ -70,9 +70,7 @@ struct WelcomeView: View {
         NotificationCenter.default.post(name: .openRepository, object: nil)
     }
     
-    private func cloneRepository() {
-        NotificationCenter.default.post(name: .cloneRepository, object: nil)
-    }
+
 }
 
 struct ActionButton: View {
