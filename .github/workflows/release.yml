@@ -79,10 +79,20 @@ jobs:
         body: |
           ## GitY v${{ steps.version.outputs.version }}
           
-          ### Installation
+          ### Installation (Recommended: Homebrew)
+          ```bash
+          brew tap dongri/tap
+          brew install --cask dongri/tap/gity
+          ```
+          
+          ### Manual Installation
           1. Download `GitY.dmg`
           2. Open the DMG file
           3. Drag GitY.app to Applications folder
+          4. Run the following command in Terminal:
+             ```bash
+             xattr -cr /Applications/GitY.app
+             ```
           
           ### Command Line Tool
           After installing, open GitY and go to Settings > Integration to install the `gity` command line tool.

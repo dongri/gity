@@ -14,22 +14,29 @@ GitY is a complete rewrite of the classic GitX application in Swift, featuring t
 
 Coming soon...
 
-## Download
-
-Download the latest version from [Releases](https://github.com/dongri/gity/releases/latest):
-
-| File | Description |
-|------|-------------|
-| `GitY.dmg` | Disk image for easy installation |
-| `GitY.zip` | Zipped application bundle |
-
 ## Installation
 
-### From DMG (Recommended)
-1. Download `GitY.dmg` from the latest release
-2. Open the DMG file
-3. Drag `GitY.app` to the Applications folder
-4. Launch GitY from Applications
+### Using Homebrew (Recommended)
+
+The easiest way to install GitY is via Homebrew Cask:
+
+```bash
+brew tap dongri/tap
+brew install --cask gity
+```
+
+### Manual Installation (DMG)
+
+1. Download `GitY.dmg` from the [latest release](https://github.com/dongri/gity/releases/latest).
+2. Open the DMG file.
+3. Drag `GitY.app` to the **Applications** folder.
+4. **Important**: You must run the following command in Terminal to allow the app to run (removes Gatekeeper quarantine):
+
+   ```bash
+   xattr -cr /Applications/GitY.app
+   ```
+   
+5. Launch GitY from Applications.
 
 ### From Source
 ```bash
