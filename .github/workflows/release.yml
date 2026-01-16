@@ -27,6 +27,16 @@ jobs:
       with:
         xcode-version: latest-stable
     
+    - name: Update version in project
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          VERSION="${GITHUB_REF#refs/tags/v}"
+        fi
+        echo "Setting MARKETING_VERSION to $VERSION"
+        sed -i '' "s/MARKETING_VERSION = .*/MARKETING_VERSION = $VERSION;/g" GitY.xcodeproj/project.pbxproj
+    
     - name: Build application
       run: |
         xcodebuild -project GitY.xcodeproj \
