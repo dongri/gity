@@ -156,7 +156,6 @@ jobs:
           
           ### Installation (Recommended: Homebrew)
           ```bash
-          brew tap dongri/tap
           brew install --cask dongri/tap/gity
           ```
           
@@ -166,8 +165,10 @@ jobs:
           3. Drag GitY.app to Applications folder
           4. Double-click to launch! ✨
           
+          > **Note**: GitY is signed and notarized by Apple, so it will launch without any security warnings.
+          
           ### Command Line Tool
-          After installing, open GitY and go to Settings > Integration to install the `gity` command line tool.
+          After installing, open GitY and go to **Settings > Integration** to install the `gity` command line tool.
           
           ```bash
           gity .                    # Open current directory

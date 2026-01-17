@@ -18,6 +18,10 @@ struct PreferencesView: View {
     @State private var isInstallingCLI = false
     @State private var installError: String?
     
+    // Git info - loaded once on appear to avoid blocking UI
+    @State private var gitVersionText: String = "Loading..."
+    @State private var gitPathText: String = "Loading..."
+    
     var body: some View {
         TabView {
             // General
@@ -71,11 +75,11 @@ struct PreferencesView: View {
                         Text("Git executable")
                             .font(.headline)
                         
-                        Text(gitVersion)
+                        Text(gitVersionText)
                             .font(.system(.body, design: .monospaced))
                             .foregroundColor(.secondary)
                         
-                        Text(gitPath)
+                        Text(gitPathText)
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -84,6 +88,9 @@ struct PreferencesView: View {
             .padding(20)
             .tabItem {
                 Label("Git", systemImage: "terminal")
+            }
+            .onAppear {
+                loadGitInfo()
             }
             
             // Integration
@@ -207,16 +214,21 @@ struct PreferencesView: View {
         isInstallingCLI = true
         installError = nil
         
-        DispatchQueue.global(qos: .userInitiated).async {
-            let result = CLIInstaller.install()
-            
-            DispatchQueue.main.async {
-                isInstallingCLI = false
-                if result.success {
-                    cliInstallStatus = .installed
-                    installError = nil
-                } else {
-                    installError = result.error
+        // Use asyncAfter to allow SwiftUI to update the view first
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Run installer on background thread
+            DispatchQueue.global(qos: .userInitiated).async {
+                let result = CLIInstaller.install()
+                
+                // Update UI on main thread
+                DispatchQueue.main.async {
+                    self.isInstallingCLI = false
+                    if result.success {
+                        self.cliInstallStatus = .installed
+                        self.installError = nil
+                    } else {
+                        self.installError = result.error
+                    }
                 }
             }
         }
@@ -226,16 +238,21 @@ struct PreferencesView: View {
         isInstallingCLI = true
         installError = nil
         
-        DispatchQueue.global(qos: .userInitiated).async {
-            let result = CLIInstaller.uninstall()
-            
-            DispatchQueue.main.async {
-                isInstallingCLI = false
-                if result.success {
-                    cliInstallStatus = .notInstalled
-                    installError = nil
-                } else {
-                    installError = result.error
+        // Use asyncAfter to allow SwiftUI to update the view first
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Run uninstaller on background thread
+            DispatchQueue.global(qos: .userInitiated).async {
+                let result = CLIInstaller.uninstall()
+                
+                // Update UI on main thread
+                DispatchQueue.main.async {
+                    self.isInstallingCLI = false
+                    if result.success {
+                        self.cliInstallStatus = .notInstalled
+                        self.installError = nil
+                    } else {
+                        self.installError = result.error
+                    }
                 }
             }
         }
@@ -243,7 +260,19 @@ struct PreferencesView: View {
     
     // MARK: - Git Info
     
-    private var gitVersion: String {
+    private func loadGitInfo() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let version = Self.fetchGitVersion()
+            let path = Self.fetchGitPath()
+            
+            DispatchQueue.main.async {
+                self.gitVersionText = version
+                self.gitPathText = path
+            }
+        }
+    }
+    
+    private static func fetchGitVersion() -> String {
         let process = Process()
         let pipe = Pipe()
         
@@ -261,7 +290,7 @@ struct PreferencesView: View {
         }
     }
     
-    private var gitPath: String {
+    private static func fetchGitPath() -> String {
         let process = Process()
         let pipe = Pipe()
         
@@ -349,23 +378,27 @@ struct CLIInstaller {
         do {
             try installScript.write(toFile: tempPath, atomically: true, encoding: .utf8)
             
-            // Run with admin privileges using AppleScript
-            let appleScript = """
-            do shell script "bash \(tempPath)" with administrator privileges
-            """
+            // Run with admin privileges using osascript (Process is safe on background threads)
+            let process = Process()
+            process.executableURL = URL(fileURLWithPath: "/usr/bin/osascript")
+            process.arguments = ["-e", "do shell script \"bash \(tempPath)\" with administrator privileges"]
             
-            var error: NSDictionary?
-            if let script = NSAppleScript(source: appleScript) {
-                script.executeAndReturnError(&error)
-                if let error = error {
-                    return Result(success: false, error: error["NSAppleScriptErrorMessage"] as? String ?? "Unknown error")
-                }
-            }
+            let errorPipe = Pipe()
+            process.standardError = errorPipe
             
-            // Clean up
+            try process.run()
+            process.waitUntilExit()
+            
+            // Clean up temp file
             try? FileManager.default.removeItem(atPath: tempPath)
             
-            return Result(success: true, error: nil)
+            if process.terminationStatus == 0 {
+                return Result(success: true, error: nil)
+            } else {
+                let data = errorPipe.fileHandleForReading.readDataToEndOfFile()
+                let errorMsg = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "Installation failed"
+                return Result(success: false, error: errorMsg.isEmpty ? "User cancelled" : errorMsg)
+            }
         } catch {
             return Result(success: false, error: error.localizedDescription)
         }

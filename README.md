@@ -21,8 +21,7 @@ Coming soon...
 The easiest way to install GitY is via Homebrew Cask:
 
 ```bash
-brew tap dongri/tap
-brew install --cask gity
+brew install --cask dongri/tap/gity
 ```
 
 ### Manual Installation (DMG)
@@ -30,15 +29,12 @@ brew install --cask gity
 1. Download `GitY.dmg` from the [latest release](https://github.com/dongri/gity/releases/latest).
 2. Open the DMG file.
 3. Drag `GitY.app` to the **Applications** folder.
-4. **Important**: You must run the following command in Terminal to allow the app to run (removes Gatekeeper quarantine):
+4. Launch GitY from Applications.
 
-   ```bash
-   xattr -cr /Applications/GitY.app
-   ```
-   
-5. Launch GitY from Applications.
+> **Note**: GitY is signed and notarized by Apple, so it will launch without any security warnings.
 
 ### From Source
+
 ```bash
 git clone https://github.com/dongri/gity.git
 cd gity
@@ -73,10 +69,11 @@ gity /path/to/repo        # Open specific repository
 - 🔍 **Diff Viewer** - Syntax-highlighted diff viewing
 - ⚡ **Performance Optimized** - Asynchronous loading for smooth UI
 - 🖥️ **Command Line Tool** - Open repositories from Terminal
+- ✅ **Signed & Notarized** - Verified by Apple for security
 
 ## Requirements
 
-- macOS 13.0 or later
+- macOS 13.0 (Ventura) or later
 - Git installed (usually at `/usr/bin/git`)
 
 ## Building from Source
@@ -103,6 +100,16 @@ xcodebuild -project GitY.xcodeproj -scheme GitY -configuration Release build
 
 # The app will be in DerivedData
 open ~/Library/Developer/Xcode/DerivedData/GitY-*/Build/Products/Release/GitY.app
+```
+
+#### Using Swift Package Manager
+```bash
+# Clone the repository
+git clone https://github.com/dongri/gity.git
+cd gity
+
+# Build and run
+swift run
 ```
 
 ## Architecture

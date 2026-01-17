@@ -41,7 +41,10 @@ struct GitYApp: App {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Setup application
+        // Ensure the app appears in the Dock and has a menu bar
+        // This is necessary when running via `swift run` or as a CLI binary
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
     }
     
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
