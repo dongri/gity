@@ -1,10 +1,10 @@
-# GitY
-
-A modern macOS Git client written in Swift, inspired by GitX.
-
 <p align="center">
   <img src="Resources/Assets.xcassets/AppIcon.appiconset/icon_256x256.png" alt="GitY Icon" width="128" height="128">
 </p>
+
+# GitY
+
+A modern macOS Git client written in Swift, inspired by GitX.
 
 ## Overview
 
