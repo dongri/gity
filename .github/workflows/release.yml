@@ -66,6 +66,12 @@ jobs:
           CODE_SIGN_IDENTITY="Developer ID Application: Dongri Jin (${{ secrets.APPLE_TEAM_ID }})" \
           OTHER_CODE_SIGN_FLAGS="--timestamp --options=runtime" \
           build
+        
+        # Re-sign the app with correct entitlements (removes get-task-allow)
+        codesign --force --deep --timestamp --options=runtime \
+          --sign "Developer ID Application: Dongri Jin (${{ secrets.APPLE_TEAM_ID }})" \
+          --entitlements Resources/GitY.entitlements \
+          build/Build/Products/Release/GitY.app
     
     - name: Notarize application
       env:
