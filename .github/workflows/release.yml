@@ -66,6 +66,28 @@ jobs:
           CODE_SIGN_IDENTITY="Developer ID Application: Dongri Jin (${{ secrets.APPLE_TEAM_ID }})" \
           build
     
+    - name: Notarize application
+      env:
+        APPLE_ID: ${{ secrets.APPLE_ID }}
+        APPLE_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      run: |
+        # Create ZIP for notarization
+        ditto -c -k --keepParent build/Build/Products/Release/GitY.app GitY-notarize.zip
+        
+        # Submit for notarization and wait for completion
+        xcrun notarytool submit GitY-notarize.zip \
+          --apple-id "$APPLE_ID" \
+          --password "$APPLE_PASSWORD" \
+          --team-id "$TEAM_ID" \
+          --wait
+        
+        # Staple the notarization ticket to the app
+        xcrun stapler staple build/Build/Products/Release/GitY.app
+        
+        # Clean up
+        rm GitY-notarize.zip
+    
     - name: Create DMG
       run: |
         # Create a temporary directory for DMG contents
@@ -98,7 +120,7 @@ jobs:
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        name: GitY v${{ steps.version.outputs.version }}
+        name: v${{ steps.version.outputs.version }}
         draft: false
         prerelease: false
         files: |
@@ -117,9 +139,7 @@ jobs:
           1. Download `GitY.dmg`
           2. Open the DMG file
           3. Drag GitY.app to Applications folder
-          4. On first launch, if you see a security warning:
-             - Go to **System Settings → Privacy & Security**
-             - Click **"Open Anyway"** next to GitY
+          4. Double-click to launch! ✨
           
           ### Command Line Tool
           After installing, open GitY and go to Settings > Integration to install the `gity` command line tool.
