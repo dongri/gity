@@ -7,26 +7,26 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		001 /* GitYApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 101; };
-		002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102; };
-		003 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103; };
-		004 /* MainRepositoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104; };
-		005 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105; };
-		006 /* StageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 106; };
-		007 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107; };
-		008 /* DiffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 108; };
-		009 /* StashDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 109; };
-		010 /* SubmoduleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110; };
-		011 /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111; };
-		012 /* GitRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 112; };
-		013 /* GitRef.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113; };
-		014 /* GitCommit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114; };
-		015 /* ChangedFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 115; };
-		016 /* GitStash.swift in Sources */ = {isa = PBXBuildFile; fileRef = 116; };
-		017 /* GitSubmodule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 117; };
-		018 /* DirectoryWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118; };
-		019 /* RelativeDateFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 119; };
-		020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 200; };
+		001 /* GitYApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 101 /* GitYApp.swift */; };
+		002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102 /* ContentView.swift */; };
+		003 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103 /* WelcomeView.swift */; };
+		004 /* MainRepositoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104 /* MainRepositoryView.swift */; };
+		005 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105 /* SidebarView.swift */; };
+		006 /* StageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 106 /* StageView.swift */; };
+		007 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107 /* HistoryView.swift */; };
+		008 /* DiffView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 108 /* DiffView.swift */; };
+		009 /* StashDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 109 /* StashDetailView.swift */; };
+		010 /* SubmoduleDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 110 /* SubmoduleDetailView.swift */; };
+		011 /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111 /* PreferencesView.swift */; };
+		012 /* GitRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 112 /* GitRepository.swift */; };
+		013 /* GitRef.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113 /* GitRef.swift */; };
+		014 /* GitCommit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114 /* GitCommit.swift */; };
+		015 /* ChangedFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 115 /* ChangedFile.swift */; };
+		016 /* GitStash.swift in Sources */ = {isa = PBXBuildFile; fileRef = 116 /* GitStash.swift */; };
+		017 /* GitSubmodule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 117 /* GitSubmodule.swift */; };
+		018 /* DirectoryWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118 /* DirectoryWatcher.swift */; };
+		019 /* RelativeDateFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 119 /* RelativeDateFormatter.swift */; };
+		020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 200 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -379,6 +379,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = 6SRWK494FT;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -389,7 +390,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.gitx.gity;
+				PRODUCT_BUNDLE_IDENTIFIER = org.dongri.gity;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -406,6 +407,7 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
+				DEVELOPMENT_TEAM = 6SRWK494FT;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -416,7 +418,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.gitx.gity;
+				PRODUCT_BUNDLE_IDENTIFIER = org.dongri.gity;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
