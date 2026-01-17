@@ -37,15 +37,33 @@ jobs:
         echo "Setting MARKETING_VERSION to $VERSION"
         sed -i '' "s/MARKETING_VERSION = .*/MARKETING_VERSION = $VERSION;/g" GitY.xcodeproj/project.pbxproj
     
+    - name: Import signing certificate
+      env:
+        CERTIFICATE_BASE64: ${{ secrets.APPLE_CERTIFICATE_BASE64 }}
+        CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      run: |
+        # Decode certificate
+        echo $CERTIFICATE_BASE64 | base64 --decode > certificate.p12
+        
+        # Create temporary keychain
+        security create-keychain -p "temp123" build.keychain
+        security default-keychain -s build.keychain
+        security unlock-keychain -p "temp123" build.keychain
+        
+        # Import certificate
+        security import certificate.p12 -k build.keychain -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+        security set-key-partition-list -S apple-tool:,apple: -s -k "temp123" build.keychain
+        
+        # Clean up
+        rm certificate.p12
+    
     - name: Build application
       run: |
         xcodebuild -project GitY.xcodeproj \
           -scheme GitY \
           -configuration Release \
           -derivedDataPath build \
-          CODE_SIGN_IDENTITY="-" \
-          CODE_SIGNING_REQUIRED=NO \
-          CODE_SIGNING_ALLOWED=NO \
+          CODE_SIGN_IDENTITY="Developer ID Application: Dongri Jin (${{ secrets.APPLE_TEAM_ID }})" \
           build
     
     - name: Create DMG
@@ -99,10 +117,9 @@ jobs:
           1. Download `GitY.dmg`
           2. Open the DMG file
           3. Drag GitY.app to Applications folder
-          4. Run the following command in Terminal:
-             ```bash
-             xattr -cr /Applications/GitY.app
-             ```
+          4. On first launch, if you see a security warning:
+             - Go to **System Settings → Privacy & Security**
+             - Click **"Open Anyway"** next to GitY
           
           ### Command Line Tool
           After installing, open GitY and go to Settings > Integration to install the `gity` command line tool.
@@ -118,7 +135,7 @@ jobs:
       if: github.event_name == 'workflow_dispatch'
       uses: actions/upload-artifact@v4
       with:
-        name: GitY-${{ steps.version.outputs.version }}
+        name: ${{ steps.version.outputs.version }}
         path: |
           GitY.dmg
           GitY.zip
