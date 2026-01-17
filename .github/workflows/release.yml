@@ -64,6 +64,7 @@ jobs:
           -configuration Release \
           -derivedDataPath build \
           CODE_SIGN_IDENTITY="Developer ID Application: Dongri Jin (${{ secrets.APPLE_TEAM_ID }})" \
+          OTHER_CODE_SIGN_FLAGS="--timestamp --options=runtime" \
           build
     
     - name: Notarize application
@@ -80,13 +81,31 @@ jobs:
           --apple-id "$APPLE_ID" \
           --password "$APPLE_PASSWORD" \
           --team-id "$TEAM_ID" \
-          --wait
+          --wait \
+          --output-format json > notarization_result.json || true
+        
+        # Check result and get log if failed
+        STATUS=$(cat notarization_result.json | python3 -c "import sys, json; print(json.load(sys.stdin).get('status', 'Unknown'))")
+        SUBMISSION_ID=$(cat notarization_result.json | python3 -c "import sys, json; print(json.load(sys.stdin).get('id', ''))")
+        
+        echo "Notarization status: $STATUS"
+        
+        if [ "$STATUS" != "Accepted" ]; then
+          echo "Notarization failed. Fetching log..."
+          xcrun notarytool log "$SUBMISSION_ID" \
+            --apple-id "$APPLE_ID" \
+            --password "$APPLE_PASSWORD" \
+            --team-id "$TEAM_ID" \
+            notarization_log.json
+          cat notarization_log.json
+          exit 1
+        fi
         
         # Staple the notarization ticket to the app
         xcrun stapler staple build/Build/Products/Release/GitY.app
         
         # Clean up
-        rm GitY-notarize.zip
+        rm GitY-notarize.zip notarization_result.json
     
     - name: Create DMG
       run: |
