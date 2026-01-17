@@ -176,6 +176,53 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
+    - name: Update Homebrew Cask
+      if: startsWith(github.ref, 'refs/tags/')
+      env:
+        HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+      run: |
+        VERSION="${{ steps.version.outputs.version }}"
+        SHA256=$(shasum -a 256 GitY.dmg | awk '{print $1}')
+        
+        git clone https://x-access-token:${HOMEBREW_TAP_TOKEN}@github.com/dongri/homebrew-tap.git
+        cd homebrew-tap
+        
+        cat > Casks/gity.rb << 'CASKEOF'
+        cask "gity" do
+          version "VERSION_PLACEHOLDER"
+          sha256 "SHA256_PLACEHOLDER"
+
+          url "https://github.com/dongri/gity/releases/download/v#{version}/GitY.dmg"
+          name "GitY"
+          desc "A modern Git GUI client for macOS"
+          homepage "https://github.com/dongri/gity"
+
+          depends_on macos: ">= :ventura"
+
+          app "GitY.app"
+
+          zap trash: [
+            "~/Library/Application Support/com.gitx.gity",
+            "~/Library/Caches/com.gitx.gity",
+            "~/Library/Preferences/com.gitx.gity.plist",
+            "~/Library/Saved Application State/com.gitx.gity.savedState",
+          ]
+        end
+        CASKEOF
+        
+        # Remove leading spaces from heredoc content
+        sed -i '' 's/^        //' Casks/gity.rb
+        
+        # Replace placeholders with actual values
+        sed -i '' "s/VERSION_PLACEHOLDER/${VERSION}/g" Casks/gity.rb
+        sed -i '' "s/SHA256_PLACEHOLDER/${SHA256}/g" Casks/gity.rb
+        
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+        git add Casks/gity.rb
+        git commit -m "Update gity to v${VERSION}"
+        git push
+    
     - name: Upload artifacts (for manual workflow)
       if: github.event_name == 'workflow_dispatch'
       uses: actions/upload-artifact@v4
