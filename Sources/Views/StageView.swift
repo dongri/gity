@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 struct StageView: View {
     @ObservedObject var repository: GitRepository
@@ -17,6 +18,7 @@ struct StageView: View {
     @State private var isCommitting: Bool = false
     @State private var isLoadingDiff: Bool = false
     @State private var diffLoadTask: Task<Void, Never>?
+    @FocusState private var isCommitMessageFocused: Bool
     
     var body: some View {
         VStack(spacing: 0) {
@@ -71,6 +73,7 @@ struct StageView: View {
                         .font(.system(.body, design: .monospaced))
                         .scrollContentBackground(.hidden)
                         .background(Color(nsColor: .textBackgroundColor))
+                        .focused($isCommitMessageFocused)
                     
                     HStack {
                         Toggle("Amend", isOn: $isAmend)
@@ -81,8 +84,9 @@ struct StageView: View {
                         Button("Commit") {
                             commitChanges()
                         }
+                        .keyboardShortcut(.return, modifiers: .command)
                         .buttonStyle(.borderedProminent)
-                        .disabled(commitMessage.count < 3 || repository.stagedFiles.isEmpty || isCommitting)
+                        .disabled(!canCommit)
                     }
                     .padding(8)
                     .background(Color(nsColor: .controlBackgroundColor))
@@ -158,6 +162,10 @@ struct StageView: View {
                 }
             }
         }
+    }
+    
+    private var canCommit: Bool {
+        commitMessage.count >= 3 && !repository.stagedFiles.isEmpty && !isCommitting
     }
     
     private var selectedFile: ChangedFile? {
