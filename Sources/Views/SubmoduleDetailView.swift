@@ -42,6 +42,7 @@ struct SubmoduleDetailView: View {
                 } label: {
                     Label("Open Submodule", systemImage: "folder")
                 }
+                .pointingHandCursor()
                 
                 Button {
                     Task {
@@ -50,6 +51,7 @@ struct SubmoduleDetailView: View {
                 } label: {
                     Label("Update", systemImage: "arrow.clockwise")
                 }
+                .pointingHandCursor()
                 
                 Spacer()
             }

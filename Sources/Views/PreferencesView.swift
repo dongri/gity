@@ -28,12 +28,14 @@ struct PreferencesView: View {
             Form {
                 Section {
                     Toggle("Show Stage view on repository open", isOn: $showStageViewOnOpen)
+                        .pointingHandCursor()
                     
                     Picker("Default branch filter", selection: $defaultBranchFilter) {
                         Text("All branches").tag(0)
                         Text("Local branches").tag(1)
                         Text("Current branch").tag(2)
                     }
+                    .pointingHandCursor()
                     
                     Picker("Auto-refresh interval", selection: $refreshInterval) {
                         Text("Never").tag(0)
@@ -42,6 +44,7 @@ struct PreferencesView: View {
                         Text("1 minute").tag(60)
                         Text("5 minutes").tag(300)
                     }
+                    .pointingHandCursor()
                 }
             }
             .padding(20)
@@ -59,8 +62,10 @@ struct PreferencesView: View {
                         Text("5 lines").tag(5)
                         Text("10 lines").tag(10)
                     }
+                    .pointingHandCursor()
                     
                     Toggle("Use monospace font", isOn: $useMonospaceFont)
+                        .pointingHandCursor()
                 }
             }
             .padding(20)
@@ -150,12 +155,14 @@ struct PreferencesView: View {
                                 }
                             }
                             .disabled(isInstallingCLI)
+                            .pointingHandCursor()
                             
                             if cliInstallStatus == .installed {
                                 Button("Uninstall") {
                                     uninstallCLI()
                                 }
                                 .foregroundColor(.red)
+                                .pointingHandCursor()
                             }
                         }
                         

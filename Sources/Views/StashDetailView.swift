@@ -44,6 +44,7 @@ struct StashDetailView: View {
                 } label: {
                     Label("Apply", systemImage: "arrow.down.doc")
                 }
+                .pointingHandCursor()
                 
                 Button {
                     Task {
@@ -52,6 +53,7 @@ struct StashDetailView: View {
                 } label: {
                     Label("Pop", systemImage: "arrow.up.doc")
                 }
+                .pointingHandCursor()
                 
                 Button(role: .destructive) {
                     Task {
@@ -60,6 +62,7 @@ struct StashDetailView: View {
                 } label: {
                     Label("Drop", systemImage: "trash")
                 }
+                .pointingHandCursor()
                 
                 Spacer()
             }

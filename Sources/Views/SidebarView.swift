@@ -153,6 +153,7 @@ struct SidebarView: View {
                                 }
                                 .buttonStyle(.plain)
                                 .disabled(repository.isLoadingTags)
+                                .pointingHandCursor()
                             }
                         }
                     }
@@ -380,6 +381,7 @@ struct SectionHeader: View {
             }
         }
         .buttonStyle(.plain)
+        .pointingHandCursor()
     }
 }
 
@@ -427,6 +429,8 @@ struct SidebarItem: View {
                     .cornerRadius(8)
             }
         }
+        .contentShape(Rectangle())
+        .pointingHandCursor()
     }
 }
 
@@ -465,6 +469,7 @@ struct DiffCompareWindowContent: View {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
                 .help("Reload diff")
+                .pointingHandCursor()
             }
             .padding()
             .background(Color(nsColor: .controlBackgroundColor))

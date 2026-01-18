@@ -81,6 +81,7 @@ struct HistoryView: View {
                         }
                         .pickerStyle(.segmented)
                         .frame(width: 200)
+                        .pointingHandCursor()
                         
                         Spacer()
                         
@@ -91,6 +92,7 @@ struct HistoryView: View {
                             }
                         }
                         .frame(width: 80)
+                        .pointingHandCursor()
                         
                         TextField("🔍 Subject, Author, SHA", text: $searchText)
                             .textFieldStyle(.roundedBorder)
@@ -307,6 +309,7 @@ struct CommitTableView: View {
                 }
                 .width(min: 120, ideal: 180)
             }
+            .pointingHandCursor()
             
             // Loading indicator at bottom (shown during auto-load)
             if isLoadingMore && hasMoreCommits {
@@ -379,6 +382,7 @@ struct CommitDetailView: View {
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 120)
+                .pointingHandCursor()
                 
                 Spacer()
                 

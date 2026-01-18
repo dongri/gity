@@ -95,6 +95,7 @@ struct MainRepositoryView: View {
         }
         .help("Fetch from remote")
         .disabled(loadingActions.contains("Fetch"))
+        .pointingHandCursor()
         
         Button {
             performAction(name: "Pull") {
@@ -111,6 +112,7 @@ struct MainRepositoryView: View {
         }
         .help("Pull from remote")
         .disabled(loadingActions.contains("Pull"))
+        .pointingHandCursor()
         
         Button {
             performAction(name: "Push") {
@@ -127,6 +129,7 @@ struct MainRepositoryView: View {
         }
         .help("Push to remote")
         .disabled(loadingActions.contains("Push"))
+        .pointingHandCursor()
         
         Divider()
         
@@ -146,6 +149,7 @@ struct MainRepositoryView: View {
         }
         .help("Refresh repository")
         .disabled(loadingActions.contains("Refresh"))
+        .pointingHandCursor()
     }
     
     private func performAction(name: String, action: @escaping () async throws -> Void) {

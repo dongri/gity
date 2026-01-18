@@ -89,6 +89,7 @@ struct ActionButton: View {
             .frame(width: 160, height: 100)
         }
         .buttonStyle(.bordered)
+        .pointingHandCursor()
     }
 }
 
@@ -123,5 +124,6 @@ struct RecentRepositoryRow: View {
             .cornerRadius(8)
         }
         .buttonStyle(.plain)
+        .pointingHandCursor()
     }
 }

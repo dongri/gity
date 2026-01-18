@@ -53,6 +53,7 @@ struct StageView: View {
                             }
                             .buttonStyle(.borderless)
                             .font(.caption)
+                            .pointingHandCursor()
                         }
                     }
                     .padding(8)
@@ -90,6 +91,7 @@ struct StageView: View {
                     HStack {
                         Toggle("Amend", isOn: $isAmend)
                             .toggleStyle(.checkbox)
+                            .pointingHandCursor()
                         
                         Spacer()
                         
@@ -98,6 +100,7 @@ struct StageView: View {
                         }
                         .keyboardShortcut(.return, modifiers: .command)
                         .buttonStyle(.borderedProminent)
+                        .pointingHandCursor()
                         .disabled(!canCommit)
                     }
                     .padding(8)
@@ -121,6 +124,7 @@ struct StageView: View {
                             }
                             .buttonStyle(.borderless)
                             .font(.caption)
+                            .pointingHandCursor()
                         }
                     }
                     .padding(8)
@@ -281,6 +285,7 @@ struct FileListView: View {
                 .simultaneousGesture(TapGesture().onEnded {
                     selectedFile = file
                 })
+                .pointingHandCursor()
                 .contextMenu {
                     if let onDiscard = onDiscard {
                         Button("Discard Changes") {
