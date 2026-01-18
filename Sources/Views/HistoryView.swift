@@ -200,10 +200,6 @@ struct HistoryView: View {
                 if isLoadingDiff {
                     ProgressView()
                         .scaleEffect(0.6)
-                } else if !repository.commits.isEmpty {
-                    Text("\(filteredCommits.count) commits loaded")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
                 }
             }
         }

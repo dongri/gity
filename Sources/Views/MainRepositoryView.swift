@@ -134,10 +134,7 @@ struct MainRepositoryView: View {
         Divider()
         
         Button {
-            performAction(name: "Refresh") {
-                await repository.reloadAll()
-                await repository.loadCommits()
-            }
+            performRefresh()
         } label: {
             if loadingActions.contains("Refresh") {
                 ProgressView()
@@ -171,6 +168,53 @@ struct MainRepositoryView: View {
                     _ = loadingActions.remove(name)
                 }
                 showToast("\(name) failed: \(error.localizedDescription)", isError: true)
+            }
+        }
+    }
+    
+    private func performRefresh() {
+        guard !loadingActions.contains("Refresh") else { return }
+        
+        withAnimation {
+            _ = loadingActions.insert("Refresh")
+        }
+        
+        Task {
+            await repository.reloadAll()
+            
+            // Load commits based on current sidebar selection
+            switch selection {
+            case .stage:
+                // Stage view - reload index only, no commits needed
+                await repository.reloadIndex()
+            case .history:
+                // History view without specific branch - load all commits
+                await repository.loadCommitsForRef(nil, filter: .all)
+            case .branch(let ref):
+                // Specific local branch selected
+                await repository.loadCommitsForRef(ref, filter: .selected)
+            case .remoteBranch(let ref):
+                // Specific remote branch selected
+                await repository.loadCommitsForRef(ref, filter: .selected)
+            case .tag(let ref):
+                // Specific tag selected
+                await repository.loadCommitsForRef(ref, filter: .selected)
+            case .remote, .stash, .submodule:
+                // Other views - load all commits
+                await repository.loadCommitsForRef(nil, filter: .all)
+            }
+            
+            withAnimation {
+                _ = loadingActions.remove("Refresh")
+            }
+            
+            // Show appropriate toast message based on selection
+            switch selection {
+            case .stage:
+                showToast("Index refreshed")
+            default:
+                let commitCount = repository.commits.count
+                showToast("\(commitCount) commits loaded")
             }
         }
     }
