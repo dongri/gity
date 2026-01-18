@@ -154,20 +154,6 @@ struct StageView: View {
                 if isLoadingDiff {
                     ProgressView()
                         .scaleEffect(0.6)
-                } else {
-                    Text("Index refresh finished")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-            }
-            
-            ToolbarItem(placement: .status) {
-                Button {
-                    Task {
-                        await repository.reloadIndex()
-                    }
-                } label: {
-                    Label("Refresh", systemImage: "arrow.clockwise")
                 }
             }
         }
