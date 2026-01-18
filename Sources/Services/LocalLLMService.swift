@@ -65,6 +65,7 @@ class ModelDownloader: NSObject, URLSessionDownloadDelegate {
 
 @MainActor
 class LocalLLMService: ObservableObject {
+    // Singleton instance
     static let shared = LocalLLMService()
     
     @Published var isDownloading = false
@@ -92,20 +93,20 @@ class LocalLLMService: ObservableObject {
             template: .chatML()
         ),
         AIModel(
-            id: "gemma-2-2b-it",
-            name: "Gemma 2 2B Instruct",
-            sizeDescription: "~1.6 GB",
-            url: URL(string: "https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q4_K_M.gguf")!,
-            filename: "gemma-2-2b-it-Q4_K_M.gguf",
-            template: .chatML() // Gemma often works with ChatML or specific Gemma template
+            id: "llama-3.2-1b",
+            name: "Llama 3.2 1B Instruct",
+            sizeDescription: "~0.8 GB",
+            url: URL(string: "https://huggingface.co/hugging-quants/Llama-3.2-1B-Instruct-Q4_K_M-GGUF/resolve/main/llama-3.2-1b-instruct-q4_k_m.gguf")!,
+            filename: "llama-3.2-1b-instruct-q4_k_m.gguf",
+            template: .llama()
         ),
         AIModel(
-            id: "llama-3.2-3b",
-            name: "Llama 3.2 3B Instruct",
-            sizeDescription: "~2.0 GB",
-            url: URL(string: "https://huggingface.co/hugging-quants/Llama-3.2-3B-Instruct-Q4_K_M-GGUF/resolve/main/llama-3.2-3b-instruct-q4_k_m.gguf")!,
-            filename: "llama-3.2-3b-instruct-q4_k_m.gguf",
-            template: .llama()
+            id: "deepseek-coder-1.3b",
+            name: "DeepSeek Coder 1.3B",
+            sizeDescription: "~0.9 GB",
+            url: URL(string: "https://huggingface.co/TheBloke/deepseek-coder-1.3b-instruct-GGUF/resolve/main/deepseek-coder-1.3b-instruct.Q4_K_M.gguf")!,
+            filename: "deepseek-coder-1.3b-instruct.Q4_K_M.gguf",
+            template: .chatML()
         )
     ]
     
@@ -230,87 +231,75 @@ class LocalLLMService: ObservableObject {
         generatedMessage = ""
         errorMessage = nil
 
-        // ---- 1. Diff truncation（安全）
+        // Diff truncation
         let maxDiffLength = 2000
         let trimmedDiff: String
         if diff.count > maxDiffLength {
-            trimmedDiff =
-            diff.prefix(maxDiffLength) +
-            "\n\n[Diff truncated. Focus on the primary intent of the change.]"
+            trimmedDiff = diff.prefix(maxDiffLength) + "\n\n[Diff truncated]"
         } else {
             trimmedDiff = diff
         }
 
-        // ---- 2. 共通 System Prompt
-        let systemPrompt = """
-    You are an expert software engineer.
-    Your task is to generate a high-quality Git commit message.
+        // Simple prompt for all models
+        let systemPrompt = "Generate a git commit message. Format: type: description. Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert. Output only the commit message, nothing else."
+        let prompt = "Diff:\n\(trimmedDiff)\n\nCommit message:"
 
-    Rules:
-    - Output ONE line only
-    - Use Conventional Commits format: <type>: <description>
-    - Use imperative mood (Fix, Add, Update, Refactor)
-    - Max 72 characters
-    - Describe WHAT changed and WHY if obvious
-    - Do NOT include explanations, code, file names, or markdown
-    - If the change is non-functional, say so clearly
-    """
+        // Use chatML template for all models
+        bot.template = .chatML(systemPrompt)
 
-        // ---- 3. Few-shot（軽量・効果大）
-        let fewShot = """
-    Example:
-
-    Diff:
-    - rename BoldToken.sol to JPYdfToken.sol
-    - update references accordingly
-
-    Commit message:
-    refactor: rename BoldToken to JPYdfToken
-    """
-
-        // ---- 4. User Prompt
-        let prompt = """
-    \(systemPrompt)
-
-    \(fewShot)
-
-    Now generate the commit message for the following diff.
-
-    Diff:
-    \(trimmedDiff)
-
-    Commit message:
-    """
-
-        // ---- 5. テンプレート選択（最小差分）
-        switch model.id {
-        case "llama-3.2-3b":
-            bot.template = .llama(systemPrompt)
-        default:
-            bot.template = .chatML(systemPrompt)
-        }
-
-        // ---- 6. 出力購読（1行正規化）
+        // Simple output handling
         outputSubscription = bot.$output
             .receive(on: DispatchQueue.main)
             .sink { [weak self] text in
                 guard let self = self else { return }
-
-                // 改行・余計な説明を除去
-                let line = text
-                    .split(separator: "\n")
-                    .first?
-                    .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-
-                self.generatedMessage = line
+                let cleaned = self.simpleClean(text)
+                if !cleaned.isEmpty {
+                    self.generatedMessage = cleaned
+                }
             }
 
         await bot.respond(to: prompt)
+
+        let finalMessage = simpleClean(bot.output)
+        if !finalMessage.isEmpty {
+            generatedMessage = finalMessage
+        }
 
         outputSubscription?.cancel()
         outputSubscription = nil
 
         isGenerating = false
+    }
+
+    /// Simple cleaning of LLM output
+    private func simpleClean(_ text: String) -> String {
+        var result = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        // Remove common special tokens
+        let tokensToRemove = [
+            "<|im_end|>", "<|im_start|>", "<|endoftext|>",
+            "<<sys>>", "<</sys>>", "[INST]", "[/INST]", "</s>",
+            "<|eot_id|>", "<|assistant|>", "<|user|>"
+        ]
+        
+        for token in tokensToRemove {
+            result = result.replacingOccurrences(of: token, with: "")
+        }
+        
+        // Remove quotes
+        result = result.trimmingCharacters(in: CharacterSet(charactersIn: "\"'`"))
+        
+        // Take first line only
+        if let firstLine = result.split(separator: "\n").first {
+            result = String(firstLine).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        
+        // Limit length
+        if result.count > 72 {
+            result = String(result.prefix(72))
+        }
+        
+        return result
     }
 
 }
