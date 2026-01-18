@@ -63,6 +63,9 @@ struct StageView: View {
                         selectedFile: $selectedUnstagedFile,
                         onDoubleClick: { file in
                             stageFile(file)
+                        },
+                        onDiscard: { file in
+                            discardFile(file)
                         }
                     )
                 }
@@ -136,17 +139,25 @@ struct StageView: View {
             .frame(height: 280)
         }
         .onChange(of: selectedUnstagedFile) { file in
-            diffLoadTask?.cancel()
             if let file = file {
                 selectedStagedFile = nil
+                diffLoadTask?.cancel()
                 loadDiffAsync(for: file)
+            } else if selectedStagedFile == nil {
+                diffLoadTask?.cancel()
+                isLoadingDiff = false
+                diffContent = ""
             }
         }
         .onChange(of: selectedStagedFile) { file in
-            diffLoadTask?.cancel()
             if let file = file {
                 selectedUnstagedFile = nil
+                diffLoadTask?.cancel()
                 loadDiffAsync(for: file)
+            } else if selectedUnstagedFile == nil {
+                diffLoadTask?.cancel()
+                isLoadingDiff = false
+                diffContent = ""
             }
         }
         .toolbar {
@@ -229,6 +240,21 @@ struct StageView: View {
             }
         }
     }
+    
+    private func discardFile(_ file: ChangedFile) {
+        let alert = NSAlert()
+        alert.messageText = "Discard Changes?"
+        alert.informativeText = "Are you sure you want to discard changes to '\(file.filename)'? This action cannot be undone."
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: "Discard Changes")
+        alert.addButton(withTitle: "Cancel")
+        
+        if alert.runModal() == .alertFirstButtonReturn {
+            Task {
+                try? await repository.discard(files: [file])
+            }
+        }
+    }
 }
 
 // MARK: - File List View
@@ -237,6 +263,7 @@ struct FileListView: View {
     let files: [ChangedFile]
     @Binding var selectedFile: ChangedFile?
     let onDoubleClick: (ChangedFile) -> Void
+    var onDiscard: ((ChangedFile) -> Void)? = nil
     
     var body: some View {
         List(files, id: \.id, selection: Binding(
@@ -254,6 +281,13 @@ struct FileListView: View {
                 .simultaneousGesture(TapGesture().onEnded {
                     selectedFile = file
                 })
+                .contextMenu {
+                    if let onDiscard = onDiscard {
+                        Button("Discard Changes") {
+                            onDiscard(file)
+                        }
+                    }
+                }
         }
         .listStyle(.plain)
     }
