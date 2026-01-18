@@ -42,6 +42,7 @@ class GitRepository: ObservableObject {
     @Published var unstagedFiles: [ChangedFile] = []
     
     private var fileWatcher: DirectoryWatcher?
+    private var gitDirWatcher: GitDirectoryWatcher?
     private var cancellables = Set<AnyCancellable>()
     
     // Limits for performance
@@ -112,6 +113,9 @@ class GitRepository: ObservableObject {
         
         // Load commits after UI is responsive
         await loadCommits()
+        
+        // Start watching .git/HEAD for branch changes (e.g., from terminal)
+        startHeadWatcher()
         
         // Load secondary data in background (stashes, submodules)
         Task {
@@ -383,6 +387,81 @@ class GitRepository: ObservableObject {
         hasMoreCommits = loadedCommits.count > previousCount
     }
     
+    // MARK: - Commit Loading for Specific Ref (Branch/Tag/Remote)
+    
+    /// Currently selected ref for filtered commit loading
+    @Published var selectedRef: GitRef?
+    
+    @MainActor
+    func loadCommitsForRef(_ ref: GitRef?, filter: BranchFilterType) async {
+        isLoadingCommits = true
+        defer { isLoadingCommits = false }
+        
+        let format = "%H|%h|%s|%an|%ae|%aI|%P|%D"
+        var args: [String]
+        
+        switch filter {
+        case .all:
+            args = ["log", "--all", "-\(commitBatchSize)", "--format=\(format)"]
+        case .localRemote:
+            args = ["log", "-\(commitBatchSize)", "--format=\(format)"]
+        case .selected:
+            if let ref = ref {
+                // For tags, we need to use the tag name directly
+                args = ["log", ref.name, "-\(commitBatchSize)", "--format=\(format)"]
+            } else if let branch = currentBranch {
+                args = ["log", branch.name, "-\(commitBatchSize)", "--format=\(format)"]
+            } else {
+                args = ["log", "-\(commitBatchSize)", "--format=\(format)"]
+            }
+        }
+        
+        let output = await runGitAsync(args)
+        let loadedCommits = output.components(separatedBy: "\n")
+            .filter { !$0.isEmpty }
+            .compactMap { GitCommit.from(logLine: $0) }
+        
+        commits = loadedCommits
+        selectedRef = ref
+        hasMoreCommits = loadedCommits.count >= commitBatchSize
+    }
+    
+    @MainActor
+    func loadMoreCommitsForRef(_ ref: GitRef?, filter: BranchFilterType) async {
+        guard !isLoadingMoreCommits && !isLoadingCommits && hasMoreCommits else { return }
+        
+        isLoadingMoreCommits = true
+        defer { isLoadingMoreCommits = false }
+        
+        let previousCount = commits.count
+        let newLimit = previousCount + commitBatchSize
+        let format = "%H|%h|%s|%an|%ae|%aI|%P|%D"
+        var args: [String]
+        
+        switch filter {
+        case .all:
+            args = ["log", "--all", "-\(newLimit)", "--format=\(format)"]
+        case .localRemote:
+            args = ["log", "-\(newLimit)", "--format=\(format)"]
+        case .selected:
+            if let ref = ref {
+                args = ["log", ref.name, "-\(newLimit)", "--format=\(format)"]
+            } else if let branch = currentBranch {
+                args = ["log", branch.name, "-\(newLimit)", "--format=\(format)"]
+            } else {
+                args = ["log", "-\(newLimit)", "--format=\(format)"]
+            }
+        }
+        
+        let output = await runGitAsync(args)
+        let loadedCommits = output.components(separatedBy: "\n")
+            .filter { !$0.isEmpty }
+            .compactMap { GitCommit.from(logLine: $0) }
+        
+        commits = loadedCommits
+        hasMoreCommits = loadedCommits.count > previousCount
+    }
+    
     // MARK: - Git Operations (All Async)
     func stage(files: [ChangedFile]) async throws {
         let paths = files.map { $0.path }
@@ -444,8 +523,9 @@ class GitRepository: ObservableObject {
         if output.contains("error") || output.contains("fatal") {
             throw GitError.checkoutFailed(output)
         }
-        _ = await MainActor.run {
+        await MainActor.run {
             Task {
+                await self.loadCurrentBranchAsync()
                 await self.loadRefsInBackground()
                 await self.loadCommits()
             }
@@ -714,6 +794,36 @@ class GitRepository: ObservableObject {
     @discardableResult
     func runGit(_ arguments: [String]) -> String {
         return runGitSync(arguments)
+    }
+    
+    // MARK: - HEAD File Watching (for terminal branch changes)
+    
+    private var headWatcherDebounceTask: Task<Void, Never>?
+    
+    private func startHeadWatcher() {
+        // Use FSEvents-based watcher for reliable detection of git operations from terminal
+        gitDirWatcher = GitDirectoryWatcher(gitDirectory: gitDirectory) { [weak self] in
+            // Debounce: cancel previous task and wait a moment before refreshing
+            self?.headWatcherDebounceTask?.cancel()
+            self?.headWatcherDebounceTask = Task { @MainActor [weak self] in
+                do {
+                    try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
+                    await self?.refreshBranchOnHeadChange()
+                } catch {
+                    // Task was cancelled, ignore
+                }
+            }
+        }
+    }
+    
+    @MainActor
+    private func refreshBranchOnHeadChange() async {
+        // Reload current branch when HEAD changes
+        await loadCurrentBranchAsync()
+        // Reload refs to update the UI
+        await loadRefsInBackground()
+        // Reload commits for the new branch
+        await loadCommits()
     }
 }
 

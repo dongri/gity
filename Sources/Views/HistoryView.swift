@@ -53,6 +53,16 @@ struct HistoryView: View {
         
         return commits
     }
+    
+    /// Extract the GitRef from the current selection
+    private var selectedGitRef: GitRef? {
+        switch selection {
+        case .branch(let ref), .remoteBranch(let ref), .tag(let ref):
+            return ref
+        default:
+            return nil
+        }
+    }
     // Store the split ratio to maintain consistent sizing
     @State private var splitRatio: CGFloat = 0.55
     
@@ -97,7 +107,7 @@ struct HistoryView: View {
                         isLoadingMore: repository.isLoadingMoreCommits,
                         onLoadMore: {
                             Task {
-                                await repository.loadMoreCommits()
+                                await repository.loadMoreCommitsForRef(selectedGitRef, filter: branchFilter)
                             }
                         }
                     )
@@ -141,16 +151,46 @@ struct HistoryView: View {
         }
         .onChange(of: branchFilter) { newFilter in
             repository.currentBranchFilter = newFilter
+            // Only reload if we have a valid selection or filter is not .selected
+            // This avoids double-loading when selection changes
+            if newFilter != .selected || selectedGitRef != nil {
+                Task {
+                    await repository.loadCommitsForRef(selectedGitRef, filter: newFilter)
+                }
+            }
+        }
+        .onChange(of: selection) { newSelection in
+            // Extract ref from the new selection directly
+            let newRef: GitRef?
+            switch newSelection {
+            case .branch(let ref), .remoteBranch(let ref), .tag(let ref):
+                newRef = ref
+                // Set filter to selected for specific branch/tag
+                if branchFilter != .selected {
+                    branchFilter = .selected
+                }
+            default:
+                newRef = nil
+            }
+            
+            // Load commits for the selected ref
             Task {
-                await repository.loadCommits()
+                await repository.loadCommitsForRef(newRef, filter: .selected)
             }
         }
         .onChange(of: selectedCommit) { _ in
             loadDiffForSelectedCommit()
         }
         .onAppear {
+            // Set filter to "selected" when viewing a specific branch/tag
+            switch selection {
+            case .branch, .remoteBranch, .tag:
+                branchFilter = .selected
+            default:
+                break
+            }
             Task {
-                await repository.loadCommits()
+                await repository.loadCommitsForRef(selectedGitRef, filter: branchFilter)
             }
         }
         .toolbar {
@@ -201,8 +241,10 @@ struct HistoryView: View {
             return ref.name
         case .remoteBranch(let ref):
             return ref.displayName
+        case .tag(let ref):
+            return ref.name
         default:
-            return "Selected"
+            return repository.currentBranch?.name ?? "Selected"
         }
     }
 }
