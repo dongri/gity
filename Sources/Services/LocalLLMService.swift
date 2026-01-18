@@ -1,0 +1,316 @@
+import Foundation
+import LLM
+import Combine
+
+struct AIModel: Identifiable, Equatable {
+    let id: String
+    let name: String
+    let sizeDescription: String
+    let url: URL
+    let filename: String
+    let template: Template
+    
+    static func == (lhs: AIModel, rhs: AIModel) -> Bool {
+        return lhs.id == rhs.id
+    }
+}
+
+class ModelDownloader: NSObject, URLSessionDownloadDelegate {
+    private var progressHandler: ((Double) -> Void)?
+    private var completionHandler: ((Result<URL, Error>) -> Void)?
+    private let targetURL: URL
+    
+    init(targetURL: URL) {
+        self.targetURL = targetURL
+    }
+    
+    func startDownload(url: URL, onProgress: @escaping (Double) -> Void, onCompletion: @escaping (Result<URL, Error>) -> Void) {
+        self.progressHandler = onProgress
+        self.completionHandler = onCompletion
+        
+        let configuration = URLSessionConfiguration.default
+        let session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
+        let task = session.downloadTask(with: url)
+        task.resume()
+    }
+    
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+        do {
+            if FileManager.default.fileExists(atPath: targetURL.path) {
+                try FileManager.default.removeItem(at: targetURL)
+            }
+            
+            let directory = targetURL.deletingLastPathComponent()
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            
+            try FileManager.default.moveItem(at: location, to: targetURL)
+            
+            completionHandler?(.success(targetURL))
+        } catch {
+            completionHandler?(.failure(error))
+        }
+    }
+    
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
+        progressHandler?(progress)
+    }
+    
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        if let error = error {
+            completionHandler?(.failure(error))
+        }
+    }
+}
+
+@MainActor
+class LocalLLMService: ObservableObject {
+    static let shared = LocalLLMService()
+    
+    @Published var isDownloading = false
+    @Published var downloadingModelId: String?
+    @Published var downloadProgress: Double = 0.0
+    @Published var isGenerating = false
+    @Published var generatedMessage: String = ""
+    @Published var errorMessage: String?
+    
+    // Model Management
+    @Published var selectedModelId: String {
+        didSet {
+            UserDefaults.standard.set(selectedModelId, forKey: "selectedAIModelId")
+            Task { await loadModel() }
+        }
+    }
+    
+    let models: [AIModel] = [
+        AIModel(
+            id: "qwen2.5-0.5b",
+            name: "Qwen 2.5 Coder 0.5B",
+            sizeDescription: "~0.4 GB",
+            url: URL(string: "https://huggingface.co/Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF/resolve/main/qwen2.5-coder-0.5b-instruct-q4_k_m.gguf")!,
+            filename: "qwen2.5-coder-0.5b-instruct-q4_k_m.gguf",
+            template: .chatML()
+        ),
+        AIModel(
+            id: "gemma-2-2b-it",
+            name: "Gemma 2 2B Instruct",
+            sizeDescription: "~1.6 GB",
+            url: URL(string: "https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q4_K_M.gguf")!,
+            filename: "gemma-2-2b-it-Q4_K_M.gguf",
+            template: .chatML() // Gemma often works with ChatML or specific Gemma template
+        ),
+        AIModel(
+            id: "llama-3.2-3b",
+            name: "Llama 3.2 3B Instruct",
+            sizeDescription: "~2.0 GB",
+            url: URL(string: "https://huggingface.co/hugging-quants/Llama-3.2-3B-Instruct-Q4_K_M-GGUF/resolve/main/llama-3.2-3b-instruct-q4_k_m.gguf")!,
+            filename: "llama-3.2-3b-instruct-q4_k_m.gguf",
+            template: .llama()
+        )
+    ]
+    
+    var currentModel: AIModel? {
+        models.first { $0.id == selectedModelId }
+    }
+    
+    private var bot: LLM?
+    private var downloader: ModelDownloader?
+    private var outputSubscription: AnyCancellable?
+    
+    private init() {
+        self.selectedModelId = UserDefaults.standard.string(forKey: "selectedAIModelId") ?? "qwen2.5-0.5b"
+        
+        // Initial load if model exists
+        if isModelDownloaded(id: selectedModelId) {
+            Task {
+                await loadModel()
+            }
+        }
+    }
+    
+    private func getModelPath(filename: String) -> URL {
+        let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!.appendingPathComponent("GitY/models")
+        try? FileManager.default.createDirectory(at: appSupportDir, withIntermediateDirectories: true, attributes: nil)
+        return appSupportDir.appendingPathComponent(filename)
+    }
+    
+    func isModelDownloaded(id: String) -> Bool {
+        guard let model = models.first(where: { $0.id == id }) else { return false }
+        return FileManager.default.fileExists(atPath: getModelPath(filename: model.filename).path)
+    }
+    
+    func deleteModel(id: String) {
+        guard let model = models.first(where: { $0.id == id }) else { return }
+        let path = getModelPath(filename: model.filename)
+        try? FileManager.default.removeItem(at: path)
+        
+        // If deleting current model, unload bot
+        if id == selectedModelId {
+            bot = nil
+        }
+        objectWillChange.send() // Force UI update
+    }
+    
+    func downloadModel(id: String) {
+        guard let model = models.first(where: { $0.id == id }) else { return }
+        if isModelDownloaded(id: id) { return }
+        
+        isDownloading = true
+        downloadingModelId = id
+        downloadProgress = 0.0
+        errorMessage = nil
+        
+        let path = getModelPath(filename: model.filename)
+        downloader = ModelDownloader(targetURL: path)
+        downloader?.startDownload(
+            url: model.url,
+            onProgress: { [weak self] progress in
+                Task { @MainActor [weak self] in
+                    self?.downloadProgress = progress
+                }
+            },
+            onCompletion: { [weak self] result in
+                Task { @MainActor [weak self] in
+                    guard let self = self else { return }
+                    self.isDownloading = false
+                    self.downloadingModelId = nil
+                    
+                    switch result {
+                    case .success:
+                        self.objectWillChange.send() // Trigger UI update for "Downloaded" status
+                        if self.selectedModelId == id {
+                            await self.loadModel()
+                        }
+                    case .failure(let error):
+                        self.errorMessage = error.localizedDescription
+                    }
+                }
+            }
+        )
+    }
+    
+    // Convenience for current model
+    func downloadCurrentModel() {
+        downloadModel(id: selectedModelId)
+    }
+    
+    private func loadModel() async {
+        guard let model = currentModel else { return }
+        let path = getModelPath(filename: model.filename)
+        
+        guard FileManager.default.fileExists(atPath: path.path) else {
+            bot = nil
+            return
+        }
+        
+        // Reload if model changed or not loaded
+        // We can't easily check if loaded bot matches current model file provided by simpler API,
+        // so we just reload. Optimizing this would require tracking loaded path.
+        bot = LLM(from: path, template: model.template)
+    }
+    
+    func generateCommitMessage(diff: String) async {
+        guard let model = currentModel else { return }
+
+        guard isModelDownloaded(id: model.id) else {
+            errorMessage = "Model not downloaded"
+            return
+        }
+
+        if bot == nil {
+            await loadModel()
+        }
+
+        guard let bot = bot else {
+            errorMessage = "Failed to load model"
+            return
+        }
+
+        isGenerating = true
+        generatedMessage = ""
+        errorMessage = nil
+
+        // ---- 1. Diff truncation（安全）
+        let maxDiffLength = 2000
+        let trimmedDiff: String
+        if diff.count > maxDiffLength {
+            trimmedDiff =
+            diff.prefix(maxDiffLength) +
+            "\n\n[Diff truncated. Focus on the primary intent of the change.]"
+        } else {
+            trimmedDiff = diff
+        }
+
+        // ---- 2. 共通 System Prompt
+        let systemPrompt = """
+    You are an expert software engineer.
+    Your task is to generate a high-quality Git commit message.
+
+    Rules:
+    - Output ONE line only
+    - Use Conventional Commits format: <type>: <description>
+    - Use imperative mood (Fix, Add, Update, Refactor)
+    - Max 72 characters
+    - Describe WHAT changed and WHY if obvious
+    - Do NOT include explanations, code, file names, or markdown
+    - If the change is non-functional, say so clearly
+    """
+
+        // ---- 3. Few-shot（軽量・効果大）
+        let fewShot = """
+    Example:
+
+    Diff:
+    - rename BoldToken.sol to JPYdfToken.sol
+    - update references accordingly
+
+    Commit message:
+    refactor: rename BoldToken to JPYdfToken
+    """
+
+        // ---- 4. User Prompt
+        let prompt = """
+    \(systemPrompt)
+
+    \(fewShot)
+
+    Now generate the commit message for the following diff.
+
+    Diff:
+    \(trimmedDiff)
+
+    Commit message:
+    """
+
+        // ---- 5. テンプレート選択（最小差分）
+        switch model.id {
+        case "llama-3.2-3b":
+            bot.template = .llama(systemPrompt)
+        default:
+            bot.template = .chatML(systemPrompt)
+        }
+
+        // ---- 6. 出力購読（1行正規化）
+        outputSubscription = bot.$output
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] text in
+                guard let self = self else { return }
+
+                // 改行・余計な説明を除去
+                let line = text
+                    .split(separator: "\n")
+                    .first?
+                    .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+
+                self.generatedMessage = line
+            }
+
+        await bot.respond(to: prompt)
+
+        outputSubscription?.cancel()
+        outputSubscription = nil
+
+        isGenerating = false
+    }
+
+}

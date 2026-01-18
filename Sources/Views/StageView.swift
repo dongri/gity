@@ -19,6 +19,7 @@ struct StageView: View {
     @State private var isLoadingDiff: Bool = false
     @State private var diffLoadTask: Task<Void, Never>?
     @FocusState private var isCommitMessageFocused: Bool
+    @ObservedObject private var llmService = LocalLLMService.shared
     
     // Helper computed properties for selected files
     private var selectedUnstagedFiles: [ChangedFile] {
@@ -106,11 +107,62 @@ struct StageView: View {
                 
                 // Commit message
                 VStack(alignment: .leading, spacing: 0) {
-                    Text("Commit Message")
-                        .font(.headline)
-                        .padding(8)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(nsColor: .controlBackgroundColor))
+                    HStack {
+                        Text("Commit Message")
+                            .font(.headline)
+                        
+                        Spacer()
+                        
+                        if llmService.isDownloading {
+                            Text("Downloading Model: \(Int(llmService.downloadProgress * 100))%")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        } else if llmService.isGenerating {
+                            Text("Generating...")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        } else {
+                            HStack(spacing: 8) {
+                                if llmService.isModelDownloaded(id: llmService.selectedModelId) {
+                                    Button(action: {
+                                        generateAICommitMessage()
+                                    }) {
+                                        Label("Generate", systemImage: "sparkles")
+                                            .labelStyle(.titleAndIcon)
+                                    }
+                                    .buttonStyle(.borderless)
+                                    .font(.caption)
+                                    .pointingHandCursor()
+                                    .help("Generate commit message from staged changes")
+                                    
+                                    // Settings button (always shown)
+                                    Button(action: {
+                                        openSettings()
+                                    }) {
+                                        Image(systemName: "gearshape")
+                                    }
+                                    .buttonStyle(.borderless)
+                                    .font(.caption)
+                                    .pointingHandCursor()
+                                    .help("Select AI Model")
+                                } else {
+                                    Button(action: {
+                                        openSettings()
+                                    }) {
+                                        Label("Download AI Model", systemImage: "arrow.down.circle")
+                                            .labelStyle(.titleAndIcon)
+                                    }
+                                    .buttonStyle(.borderless)
+                                    .font(.caption)
+                                    .pointingHandCursor()
+                                    .help("Go to Settings to download an AI model")
+                                }
+                            }
+                        }
+                    }
+                    .padding(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color(nsColor: .controlBackgroundColor))
                     
                     TextEditor(text: $commitMessage)
                         .font(.system(.body, design: .monospaced))
@@ -218,6 +270,24 @@ struct StageView: View {
                 }
             }
         }
+        .onChange(of: llmService.generatedMessage) { newMessage in
+            if !newMessage.isEmpty {
+                commitMessage = newMessage
+            }
+        }
+        .onChange(of: llmService.errorMessage) { errorMsg in
+            if let errorMsg = errorMsg {
+                // We need to run this on main thread, but onChange is already on main actor context?
+                // runModal blocks, so usually safer to use alert(item:) modifier in SwiftUI,
+                // but for now keeping consistent with other parts of the app using NSAlert.runModal()
+                // Be careful not to block UI updates.
+                // Better approach for SwiftUI is to use .alert()
+                 let alert = NSAlert()
+                 alert.messageText = "AI Generation Error"
+                 alert.informativeText = errorMsg
+                 alert.runModal()
+            }
+        }
     }
     
     private var canCommit: Bool {
@@ -296,6 +366,61 @@ struct StageView: View {
         Task {
             try? await repository.unstage(files: repository.stagedFiles)
         }
+    }
+    
+    private func generateAICommitMessage() {
+        if !llmService.isModelDownloaded(id: llmService.selectedModelId) {
+            // Should not happen via UI, but safe check
+            openSettings()
+            return
+        }
+        
+        Task {
+            let diff = await repository.diffStaged()
+            if diff.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                 await MainActor.run {
+                    let alert = NSAlert()
+                    alert.messageText = "No Staged Changes"
+                    alert.informativeText = "Please stage files to generate a commit message."
+                    alert.runModal()
+                 }
+                return
+            }
+            
+            // Limit diff size to avoid context window overflow
+            let maxDiffLength = 6000
+            let truncatedDiff = diff.count > maxDiffLength ? String(diff.prefix(maxDiffLength)) + "\n...(truncated)" : diff
+            
+            await llmService.generateCommitMessage(diff: truncatedDiff)
+        }
+    }
+    
+    private func openSettings() {
+        // Set a flag to open AI settings so PreferencesView can check it on appear
+        UserDefaults.standard.set(true, forKey: "OpenAISettingsOnLoad")
+        
+        // Try standard selectors first
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
+        
+        // If that fails (or as a backup), try to find the menu item with Cmd+, shortcut
+        if let menu = NSApp.mainMenu {
+            for item in menu.items {
+                if let submenu = item.submenu {
+                    for subitem in submenu.items {
+                        // Check for Cmd+, shortcut
+                        if subitem.keyEquivalent == "," && subitem.keyEquivalentModifierMask.contains(.command) {
+                            if let action = subitem.action {
+                                NSApp.sendAction(action, to: subitem.target, from: subitem)
+                                return
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Fallback Notification (only works if window is already open)
+        NotificationCenter.default.post(name: .openAISettings, object: nil)
     }
     
     private func commitChanges() {

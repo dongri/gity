@@ -782,6 +782,10 @@ class GitRepository: ObservableObject {
         }
     }
     
+    func diffStaged() async -> String {
+        return await runGitAsync(["diff", "--cached"])
+    }
+    
     /// Get diff between two refs (branches, tags, commits)
     func diffBetweenRefs(from fromRef: String, to toRef: String) async -> String {
         return await runGitAsync(["diff", "\(fromRef)...\(toRef)", "--stat-width=200", "-p"])
