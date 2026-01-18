@@ -6,12 +6,12 @@
 //
 
 import Foundation
-import Combine
 
 class GitDirectoryWatcher {
     private var stream: FSEventStreamRef?
-    private let callback: () -> Void
+    private var callback: (() -> Void)?
     private let path: String
+    private var isRunning = false
     
     init?(gitDirectory: URL, callback: @escaping () -> Void) {
         self.path = gitDirectory.path
@@ -27,15 +27,20 @@ class GitDirectoryWatcher {
     }
     
     private func startWatching() -> Bool {
-        var context = FSEventStreamContext(
-            version: 0,
-            info: Unmanaged.passUnretained(self).toOpaque(),
-            retain: nil,
-            release: nil,
-            copyDescription: nil
-        )
+        let pathsToWatch = [path] as CFArray
         
-        let paths = [path] as CFArray
+        // Use a simple C function pointer approach to avoid memory issues
+        let streamContext = UnsafeMutablePointer<FSEventStreamContext>.allocate(capacity: 1)
+        streamContext.initialize(to: FSEventStreamContext(
+            version: 0,
+            info: Unmanaged.passRetained(CallbackWrapper(callback: callback)).toOpaque(),
+            retain: nil,
+            release: { info in
+                guard let info = info else { return }
+                Unmanaged<CallbackWrapper>.fromOpaque(info).release()
+            },
+            copyDescription: nil
+        ))
         
         let eventCallback: FSEventStreamCallback = { (
             streamRef,
@@ -46,16 +51,16 @@ class GitDirectoryWatcher {
             eventIds
         ) in
             guard let clientCallBackInfo = clientCallBackInfo else { return }
-            let watcher = Unmanaged<GitDirectoryWatcher>.fromOpaque(clientCallBackInfo).takeUnretainedValue()
+            let wrapper = Unmanaged<CallbackWrapper>.fromOpaque(clientCallBackInfo).takeUnretainedValue()
             
-            // Check if any event relates to HEAD file
-            let paths = Unmanaged<CFArray>.fromOpaque(eventPaths).takeUnretainedValue() as! [String]
-            for i in 0..<numEvents {
-                let path = paths[i]
+            // Check if any event relates to HEAD file or refs
+            guard let paths = unsafeBitCast(eventPaths, to: NSArray.self) as? [String] else { return }
+            
+            for path in paths {
                 // Trigger callback for HEAD file changes or refs changes
-                if path.contains("HEAD") || path.contains("refs/heads") {
+                if path.contains("HEAD") || path.contains("refs/heads") || path.contains("refs/tags") {
                     DispatchQueue.main.async {
-                        watcher.callback()
+                        wrapper.callback?()
                     }
                     break
                 }
@@ -65,12 +70,14 @@ class GitDirectoryWatcher {
         stream = FSEventStreamCreate(
             nil,
             eventCallback,
-            &context,
-            paths,
+            streamContext,
+            pathsToWatch,
             FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
-            0.3, // Latency in seconds (acts as debounce)
+            0.5, // Latency in seconds (acts as debounce)
             UInt32(kFSEventStreamCreateFlagUseCFTypes | kFSEventStreamCreateFlagFileEvents)
         )
+        
+        streamContext.deallocate()
         
         guard let stream = stream else {
             return false
@@ -78,15 +85,27 @@ class GitDirectoryWatcher {
         
         FSEventStreamScheduleWithRunLoop(stream, CFRunLoopGetMain(), CFRunLoopMode.defaultMode.rawValue)
         FSEventStreamStart(stream)
+        isRunning = true
         
         return true
     }
     
     func stop() {
-        guard let stream = stream else { return }
+        guard isRunning, let stream = stream else { return }
+        isRunning = false
         FSEventStreamStop(stream)
         FSEventStreamInvalidate(stream)
         FSEventStreamRelease(stream)
         self.stream = nil
+        self.callback = nil
+    }
+}
+
+// Helper class to wrap the callback for proper memory management
+private class CallbackWrapper {
+    var callback: (() -> Void)?
+    
+    init(callback: (() -> Void)?) {
+        self.callback = callback
     }
 }

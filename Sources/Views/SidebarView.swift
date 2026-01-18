@@ -14,6 +14,12 @@ struct SidebarView: View {
     // Default: Tags collapsed to avoid performance issues
     @State private var expandedSections: Set<String> = ["homepage", "branches", "remotes"]
     
+    // Diff comparison sheet
+    @State private var showDiffSheet: Bool = false
+    @State private var diffCompareRef: GitRef? = nil
+    @State private var diffContent: String = ""
+    @State private var isLoadingDiff: Bool = false
+    
     var body: some View {
         List(selection: $selection) {
             // Homepage section - always visible
@@ -204,6 +210,26 @@ struct SidebarView: View {
             }
         }
         .listStyle(.sidebar)
+        .onChange(of: showDiffSheet) { shouldShow in
+            if shouldShow, let compareRef = diffCompareRef {
+                openDiffWindow(for: compareRef)
+            }
+        }
+    }
+    
+    // MARK: - Diff Window
+    
+    private func openDiffWindow(for compareRef: GitRef) {
+        DiffWindowManager.shared.openDiffWindow(
+            repository: repository,
+            compareRef: compareRef,
+            baseRef: repository.defaultBranch
+        )
+        
+        // Reset state
+        showDiffSheet = false
+        diffCompareRef = nil
+        diffContent = ""
     }
     
     // MARK: - Helpers
@@ -240,6 +266,12 @@ struct SidebarView: View {
             }
         }
         
+        Button("Compare with \(repository.defaultBranch)") {
+            diffCompareRef = branch
+            showDiffSheet = true
+        }
+        .disabled(branch.name == repository.defaultBranch)
+        
         Divider()
         
         Button("Delete Branch", role: .destructive) {
@@ -258,6 +290,13 @@ struct SidebarView: View {
             }
         }
         
+        Button("Compare with \(repository.defaultBranch)") {
+            diffCompareRef = branch
+            showDiffSheet = true
+        }
+        
+        Divider()
+        
         Button("Fetch") {
             Task {
                 try? await repository.fetch(remote: branch.remoteName)
@@ -271,6 +310,11 @@ struct SidebarView: View {
             Task {
                 try? await repository.checkout(ref: tag)
             }
+        }
+        
+        Button("Compare with \(repository.defaultBranch)") {
+            diffCompareRef = tag
+            showDiffSheet = true
         }
         
         Divider()
@@ -382,6 +426,138 @@ struct SidebarItem: View {
                     .foregroundColor(.accentColor)
                     .cornerRadius(8)
             }
+        }
+    }
+}
+
+// MARK: - Diff Compare Window Content
+
+struct DiffCompareWindowContent: View {
+    @ObservedObject var repository: GitRepository
+    let compareRef: GitRef
+    let baseRef: String
+    
+    @State private var diffContent: String = ""
+    @State private var isLoading: Bool = true
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Header
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Compare: \(baseRef) ↔ \(compareRef.name)")
+                        .font(.headline)
+                    
+                    Text("Showing changes from \(baseRef) to \(compareRef.name)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                Button {
+                    Task {
+                        isLoading = true
+                        diffContent = await repository.diffBetweenRefs(from: baseRef, to: compareRef.name)
+                        isLoading = false
+                    }
+                } label: {
+                    Label("Refresh", systemImage: "arrow.clockwise")
+                }
+                .help("Reload diff")
+            }
+            .padding()
+            .background(Color(nsColor: .controlBackgroundColor))
+            
+            Divider()
+            
+            // Diff content
+            if isLoading {
+                VStack {
+                    Spacer()
+                    ProgressView("Loading diff...")
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if diffContent.isEmpty {
+                VStack {
+                    Spacer()
+                    Image(systemName: "checkmark.circle")
+                        .font(.system(size: 48))
+                        .foregroundColor(.green)
+                    Text("No differences found")
+                        .font(.title2)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 8)
+                    Text("The branches are identical")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                DiffView(content: diffContent, filePath: nil)
+            }
+        }
+        .frame(minWidth: 800, minHeight: 600)
+        .onAppear {
+            loadDiff()
+        }
+    }
+    
+    private func loadDiff() {
+        Task {
+            isLoading = true
+            diffContent = await repository.diffBetweenRefs(from: baseRef, to: compareRef.name)
+            isLoading = false
+        }
+    }
+}
+
+// MARK: - Diff Window Manager
+
+class DiffWindowManager: NSObject, NSWindowDelegate {
+    static let shared = DiffWindowManager()
+    
+    private var windowControllers: [NSWindowController] = []
+    
+    private override init() {
+        super.init()
+    }
+    
+    func openDiffWindow(repository: GitRepository, compareRef: GitRef, baseRef: String) {
+        let diffView = DiffCompareWindowContent(
+            repository: repository,
+            compareRef: compareRef,
+            baseRef: baseRef
+        )
+        
+        let hostingController = NSHostingController(rootView: diffView)
+        
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 900, height: 700),
+            styleMask: [.titled, .closable, .resizable, .miniaturizable],
+            backing: .buffered,
+            defer: false
+        )
+        
+        window.title = "Compare: \(baseRef) ↔ \(compareRef.name)"
+        window.contentViewController = hostingController
+        window.delegate = self
+        window.center()
+        
+        let windowController = NSWindowController(window: window)
+        windowControllers.append(windowController)
+        
+        windowController.showWindow(nil)
+    }
+    
+    func windowWillClose(_ notification: Notification) {
+        guard let closingWindow = notification.object as? NSWindow else { return }
+        
+        // Remove the window controller from our list
+        windowControllers.removeAll { controller in
+            controller.window === closingWindow
         }
     }
 }

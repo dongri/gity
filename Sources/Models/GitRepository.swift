@@ -77,6 +77,9 @@ class GitRepository: ObservableObject {
         return content.contains("bare = true")
     }
     
+    /// The default branch name (main, master, etc.)
+    @Published var defaultBranch: String = "main"
+    
     // MARK: - Initialization
     init(url: URL) throws {
         self.url = url
@@ -101,6 +104,9 @@ class GitRepository: ObservableObject {
         // Load essential data first (current branch only) for quick UI response
         await loadCurrentBranchAsync()
         
+        // Detect default branch (main or master)
+        await detectDefaultBranch()
+        
         // Then load other data in parallel, but don't block
         async let refsTask: () = loadRefsInBackground()
         async let indexTask: () = reloadIndexAsync()
@@ -121,6 +127,36 @@ class GitRepository: ObservableObject {
         Task {
             await reloadStashesAsync()
             await reloadSubmodulesAsync()
+        }
+    }
+    
+    @MainActor
+    private func detectDefaultBranch() async {
+        // Try to get default branch from origin/HEAD
+        let originHead = await runGitAsync(["symbolic-ref", "refs/remotes/origin/HEAD"])
+        let trimmed = originHead.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if !trimmed.isEmpty && !trimmed.contains("fatal") && !trimmed.contains("error") {
+            // Extract branch name from refs/remotes/origin/main -> main
+            if let lastComponent = trimmed.components(separatedBy: "/").last {
+                defaultBranch = lastComponent
+                return
+            }
+        }
+        
+        // Fallback: Check if main or master exists locally
+        let branchList = await runGitAsync(["branch", "--list", "main", "master"])
+        let branchLines = branchList.components(separatedBy: "\n")
+            .map { $0.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "* ", with: "") }
+            .filter { !$0.isEmpty }
+        
+        if branchLines.contains("main") {
+            defaultBranch = "main"
+        } else if branchLines.contains("master") {
+            defaultBranch = "master"
+        } else {
+            // Default to main if nothing found
+            defaultBranch = "main"
         }
     }
     
@@ -523,7 +559,7 @@ class GitRepository: ObservableObject {
         if output.contains("error") || output.contains("fatal") {
             throw GitError.checkoutFailed(output)
         }
-        await MainActor.run {
+        _ = await MainActor.run {
             Task {
                 await self.loadCurrentBranchAsync()
                 await self.loadRefsInBackground()
@@ -725,6 +761,16 @@ class GitRepository: ObservableObject {
         } else {
             return await runGitAsync(["diff", "--", file.path])
         }
+    }
+    
+    /// Get diff between two refs (branches, tags, commits)
+    func diffBetweenRefs(from fromRef: String, to toRef: String) async -> String {
+        return await runGitAsync(["diff", "\(fromRef)...\(toRef)", "--stat-width=200", "-p"])
+    }
+    
+    /// Get diff summary (file list only) between two refs
+    func diffSummaryBetweenRefs(from fromRef: String, to toRef: String) async -> String {
+        return await runGitAsync(["diff", "\(fromRef)...\(toRef)", "--stat"])
     }
     
     // Synchronous versions (kept for backward compatibility)
