@@ -54,15 +54,78 @@ struct DiffView: View {
 struct DiffContentView: View {
     let content: String
     
+    // Pagination settings
+    private let initialLineCount: Int = 500
+    private let loadMoreLineCount: Int = 500
+    
+    @State private var visibleLineCount: Int = 500
+    @State private var lines: [String] = []
+    @State private var totalLineCount: Int = 0
+    
+    private var displayedLines: ArraySlice<String> {
+        lines.prefix(visibleLineCount)
+    }
+    
+    private var hasMoreLines: Bool {
+        visibleLineCount < totalLineCount
+    }
+    
+    private var remainingLineCount: Int {
+        max(0, totalLineCount - visibleLineCount)
+    }
+    
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            let lines = content.components(separatedBy: "\n")
-            ForEach(Array(lines.enumerated()), id: \.offset) { index, line in
+        LazyVStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(displayedLines.enumerated()), id: \.offset) { index, line in
                 DiffLine(lineNumber: index + 1, content: line)
+            }
+            
+            // Load more button
+            if hasMoreLines {
+                loadMoreButton
             }
         }
         .font(.system(size: 12, design: .monospaced))
         .frame(maxWidth: .infinity, alignment: .leading)
+        .onAppear {
+            parseContent()
+        }
+        .onChange(of: content) { _ in
+            parseContent()
+        }
+    }
+    
+    private var loadMoreButton: some View {
+        Button(action: loadMore) {
+            HStack {
+                Spacer()
+                VStack(spacing: 4) {
+                    Text("Load more lines")
+                        .fontWeight(.medium)
+                    Text("\(remainingLineCount.formatted()) lines remaining")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.vertical, 12)
+                Spacer()
+            }
+            .background(Color.accentColor.opacity(0.1))
+            .cornerRadius(8)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+        }
+        .buttonStyle(.plain)
+        .pointingHandCursor()
+    }
+    
+    private func parseContent() {
+        lines = content.components(separatedBy: "\n")
+        totalLineCount = lines.count
+        visibleLineCount = min(initialLineCount, totalLineCount)
+    }
+    
+    private func loadMore() {
+        visibleLineCount = min(visibleLineCount + loadMoreLineCount, totalLineCount)
     }
 }
 

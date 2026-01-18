@@ -74,13 +74,13 @@ struct HistoryView: View {
                     // Toolbar
                     HStack(spacing: 8) {
                         // Branch filter pills
-                        Picker("Filter", selection: $branchFilter) {
+                        Picker("", selection: $branchFilter) {
                             Text("All").tag(BranchFilterType.all)
                             Text("Local").tag(BranchFilterType.localRemote)
-                            Text(filterLabel).tag(BranchFilterType.selected)
+                            Text(truncatedFilterLabel).tag(BranchFilterType.selected)
                         }
                         .pickerStyle(.segmented)
-                        .frame(width: 200)
+                        .fixedSize()
                         .pointingHandCursor()
                         
                         Spacer()
@@ -126,6 +126,7 @@ struct HistoryView: View {
                 Group {
                     if let commit = selectedCommit {
                         CommitDetailView(
+                            repository: repository,
                             commit: commit,
                             diffContent: diffContent,
                             isLoadingDiff: isLoadingDiff,
@@ -245,6 +246,14 @@ struct HistoryView: View {
             return repository.currentBranch?.name ?? "Selected"
         }
     }
+    
+    private var truncatedFilterLabel: String {
+        let label = filterLabel
+        if label.count > 12 {
+            return String(label.prefix(10)) + "..."
+        }
+        return label
+    }
 }
 
 // MARK: - Commit Table View
@@ -357,6 +366,7 @@ struct RefBadge: View {
 // MARK: - Commit Detail View
 
 struct CommitDetailView: View {
+    @ObservedObject var repository: GitRepository
     let commit: GitCommit
     let diffContent: String
     let isLoadingDiff: Bool
@@ -371,7 +381,7 @@ struct CommitDetailView: View {
             
             // View mode picker
             HStack {
-                Picker("View", selection: $viewMode) {
+                Picker("", selection: $viewMode) {
                     ForEach(HistoryView.DetailViewMode.allCases, id: \.self) { mode in
                         Text(mode.rawValue).tag(mode)
                     }
@@ -407,10 +417,456 @@ struct CommitDetailView: View {
                     DiffView(content: diffContent, filePath: nil)
                 }
             case .tree:
-                Text("Tree view coming soon")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                CommitTreeView(repository: repository, commit: commit)
             }
         }
+    }
+}
+
+// MARK: - Commit Tree View
+
+struct CommitTreeView: View {
+    @ObservedObject var repository: GitRepository
+    let commit: GitCommit
+    
+    @State private var treeNodes: [TreeNode] = []
+    @State private var isLoading: Bool = true
+    @State private var selectedFile: TreeEntry?
+    @State private var fileContent: String = ""
+    @State private var isLoadingContent: Bool = false
+    @State private var searchText: String = ""
+    @State private var fileCount: Int = 0
+    
+    private var filteredNodes: [TreeNode] {
+        if searchText.isEmpty {
+            return treeNodes
+        }
+        let query = searchText.lowercased()
+        return filterNodes(treeNodes, matching: query)
+    }
+    
+    var body: some View {
+        HSplitView {
+            // File tree
+            VStack(spacing: 0) {
+                // Search bar
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.secondary)
+                    TextField("Search files...", text: $searchText)
+                        .textFieldStyle(.plain)
+                    if !searchText.isEmpty {
+                        Button(action: { searchText = "" }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .pointingHandCursor()
+                    }
+                }
+                .padding(8)
+                .background(Color(nsColor: .textBackgroundColor))
+                
+                Divider()
+                
+                // File count
+                HStack {
+                    Text("\(fileCount) files")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color(nsColor: .controlBackgroundColor))
+                
+                // Tree list
+                if isLoading {
+                    VStack {
+                        Spacer()
+                        ProgressView("Loading tree...")
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if treeNodes.isEmpty {
+                    VStack {
+                        Spacer()
+                        Text("No files")
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 0) {
+                            ForEach(filteredNodes) { node in
+                                TreeNodeView(
+                                    node: node,
+                                    selectedFile: $selectedFile,
+                                    depth: 0
+                                )
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            }
+            .frame(minWidth: 250, maxWidth: 350)
+            
+            // File content
+            VStack(spacing: 0) {
+                if let file = selectedFile {
+                    HStack {
+                        Image(systemName: file.iconName)
+                            .foregroundColor(iconColor(for: file))
+                        Text(file.path)
+                            .font(.system(.body, design: .monospaced))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                        Spacer()
+                        Text(file.formattedSize)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(8)
+                    .background(Color(nsColor: .controlBackgroundColor))
+                    
+                    Divider()
+                    
+                    if isLoadingContent {
+                        VStack {
+                            Spacer()
+                            ProgressView("Loading content...")
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        FileContentView(content: fileContent, filePath: file.path)
+                    }
+                } else {
+                    VStack {
+                        Spacer()
+                        Image(systemName: "doc.text")
+                            .font(.system(size: 48))
+                            .foregroundColor(.secondary.opacity(0.5))
+                        Text("Select a file to view its content")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                            .padding(.top, 8)
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .frame(minWidth: 300)
+        }
+        .onAppear {
+            loadTree()
+        }
+        .onChange(of: commit.sha) { _ in
+            loadTree()
+        }
+        .onChange(of: selectedFile) { newFile in
+            if let file = newFile {
+                loadFileContent(file)
+            }
+        }
+    }
+    
+    private func loadTree() {
+        isLoading = true
+        selectedFile = nil
+        fileContent = ""
+        
+        Task {
+            let entries = await repository.getTreeAsync(for: commit)
+            await MainActor.run {
+                treeNodes = TreeNode.buildTree(from: entries)
+                fileCount = entries.count
+                isLoading = false
+            }
+        }
+    }
+    
+    private func loadFileContent(_ file: TreeEntry) {
+        isLoadingContent = true
+        fileContent = ""
+        
+        Task {
+            let content = await repository.getFileContentAsync(commit: commit, path: file.path)
+            await MainActor.run {
+                fileContent = content
+                isLoadingContent = false
+            }
+        }
+    }
+    
+    private func filterNodes(_ nodes: [TreeNode], matching query: String) -> [TreeNode] {
+        var result: [TreeNode] = []
+        
+        for node in nodes {
+            if node.name.lowercased().contains(query) {
+                result.append(node)
+            } else if node.isDirectory {
+                let filteredChildren = filterNodes(node.children, matching: query)
+                if !filteredChildren.isEmpty {
+                    let filteredNode = TreeNode(
+                        name: node.name,
+                        path: node.path,
+                        entry: node.entry,
+                        isDirectory: node.isDirectory,
+                        children: filteredChildren
+                    )
+                    filteredNode.isExpanded = true
+                    result.append(filteredNode)
+                }
+            }
+        }
+        
+        return result
+    }
+    
+    private func iconColor(for file: TreeEntry) -> Color {
+        switch file.iconColor {
+        case "orange": return .orange
+        case "blue": return .blue
+        case "yellow": return .yellow
+        case "green": return .green
+        case "cyan": return .cyan
+        case "red": return .red
+        case "gray": return .gray
+        default: return .secondary
+        }
+    }
+}
+
+// MARK: - Tree Node View
+
+struct TreeNodeView: View {
+    @ObservedObject var node: TreeNode
+    @Binding var selectedFile: TreeEntry?
+    let depth: Int
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 4) {
+                // Indentation
+                ForEach(0..<depth, id: \.self) { _ in
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(width: 16)
+                }
+                
+                // Expand/collapse button for directories
+                if node.isDirectory {
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            node.isExpanded.toggle()
+                        }
+                    }) {
+                        Image(systemName: node.isExpanded ? "chevron.down" : "chevron.right")
+                            .font(.system(size: 10))
+                            .foregroundColor(.secondary)
+                            .frame(width: 12)
+                    }
+                    .buttonStyle(.plain)
+                    .pointingHandCursor()
+                } else {
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(width: 12)
+                }
+                
+                // Icon
+                Image(systemName: node.isDirectory ? (node.isExpanded ? "folder.fill" : "folder") : (node.entry?.iconName ?? "doc"))
+                    .font(.system(size: 14))
+                    .foregroundColor(node.isDirectory ? .blue : nodeIconColor)
+                    .frame(width: 18)
+                
+                // Name
+                Text(node.name)
+                    .font(.system(size: 13))
+                    .lineLimit(1)
+                
+                Spacer()
+                
+                // Size for files
+                if !node.isDirectory, let entry = node.entry {
+                    Text(entry.formattedSize)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.trailing, 8)
+                }
+            }
+            .padding(.vertical, 3)
+            .padding(.horizontal, 8)
+            .background(isSelected ? Color.accentColor.opacity(0.2) : Color.clear)
+            .cornerRadius(4)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if node.isDirectory {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        node.isExpanded.toggle()
+                    }
+                } else if let entry = node.entry {
+                    selectedFile = entry
+                }
+            }
+            .pointingHandCursor()
+            
+            // Children
+            if node.isExpanded {
+                ForEach(node.children) { child in
+                    TreeNodeView(
+                        node: child,
+                        selectedFile: $selectedFile,
+                        depth: depth + 1
+                    )
+                }
+            }
+        }
+    }
+    
+    private var isSelected: Bool {
+        if let selected = selectedFile, let entry = node.entry {
+            return selected.path == entry.path
+        }
+        return false
+    }
+    
+    private var nodeIconColor: Color {
+        guard let entry = node.entry else { return .secondary }
+        switch entry.iconColor {
+        case "orange": return .orange
+        case "blue": return .blue
+        case "yellow": return .yellow
+        case "green": return .green
+        case "cyan": return .cyan
+        case "red": return .red
+        case "gray": return .gray
+        default: return .secondary
+        }
+    }
+}
+
+// MARK: - File Content View
+
+struct FileContentView: View {
+    let content: String
+    let filePath: String
+    
+    // Pagination settings
+    private let initialLineCount: Int = 500
+    private let loadMoreLineCount: Int = 500
+    
+    @State private var visibleLineCount: Int = 500
+    @State private var lines: [String] = []
+    @State private var totalLineCount: Int = 0
+    
+    private var displayedLines: ArraySlice<String> {
+        lines.prefix(visibleLineCount)
+    }
+    
+    private var hasMoreLines: Bool {
+        visibleLineCount < totalLineCount
+    }
+    
+    private var remainingLineCount: Int {
+        max(0, totalLineCount - visibleLineCount)
+    }
+    
+    private var isBinaryFile: Bool {
+        let binaryExtensions = ["png", "jpg", "jpeg", "gif", "ico", "webp", "pdf", "zip", "tar", "gz", "rar", "7z", "mp3", "mp4", "mov", "avi", "mkv", "wav", "aac"]
+        let ext = (filePath as NSString).pathExtension.lowercased()
+        return binaryExtensions.contains(ext) || content.contains("\0")
+    }
+    
+    var body: some View {
+        if isBinaryFile {
+            VStack {
+                Spacer()
+                Image(systemName: "doc.zipper")
+                    .font(.system(size: 48))
+                    .foregroundColor(.secondary.opacity(0.5))
+                Text("Binary file - cannot display")
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+                    .padding(.top, 8)
+                Spacer()
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            GeometryReader { geometry in
+                ScrollView([.horizontal, .vertical]) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(displayedLines.enumerated()), id: \.offset) { index, line in
+                            HStack(alignment: .top, spacing: 0) {
+                                Text("\(index + 1)")
+                                    .font(.system(size: 11, design: .monospaced))
+                                    .foregroundColor(.secondary)
+                                    .frame(width: 50, alignment: .trailing)
+                                    .padding(.trailing, 12)
+                                    .background(Color(nsColor: .controlBackgroundColor))
+                                
+                                Text(line.isEmpty ? " " : line)
+                                    .font(.system(size: 12, design: .monospaced))
+                                    .textSelection(.enabled)
+                                    .fixedSize(horizontal: true, vertical: false)
+                            }
+                            .fixedSize(horizontal: true, vertical: false)
+                        }
+                        
+                        // Load more button
+                        if hasMoreLines {
+                            loadMoreButton(width: geometry.size.width)
+                        }
+                    }
+                    .padding(4)
+                    .frame(minWidth: geometry.size.width, minHeight: geometry.size.height, alignment: .topLeading)
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onAppear {
+                parseContent()
+            }
+            .onChange(of: content) { _ in
+                parseContent()
+            }
+        }
+    }
+    
+    private func loadMoreButton(width: CGFloat) -> some View {
+        Button(action: loadMore) {
+            HStack {
+                Spacer()
+                VStack(spacing: 4) {
+                    Text("Load more lines")
+                        .fontWeight(.medium)
+                        .foregroundColor(.primary)
+                    Text("\(remainingLineCount.formatted()) lines remaining")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.vertical, 12)
+                Spacer()
+            }
+            .frame(width: max(width - 16, 200))
+            .background(Color.accentColor.opacity(0.2))
+            .cornerRadius(8)
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(.plain)
+        .pointingHandCursor()
+    }
+    
+    private func parseContent() {
+        lines = content.components(separatedBy: "\n")
+        totalLineCount = lines.count
+        visibleLineCount = min(initialLineCount, totalLineCount)
+    }
+    
+    private func loadMore() {
+        visibleLineCount = min(visibleLineCount + loadMoreLineCount, totalLineCount)
     }
 }
 

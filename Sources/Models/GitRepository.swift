@@ -792,6 +792,45 @@ class GitRepository: ObservableObject {
         return await runGitAsync(["diff", "\(fromRef)...\(toRef)", "--stat"])
     }
     
+    // MARK: - Tree Operations
+    
+    /// Get file tree for a specific commit
+    func getTreeAsync(for commit: GitCommit) async -> [TreeEntry] {
+        let output = await runGitAsync(["ls-tree", "-r", "--long", commit.sha])
+        return parseTreeOutput(output)
+    }
+    
+    /// Get file content at a specific commit
+    func getFileContentAsync(commit: GitCommit, path: String) async -> String {
+        return await runGitAsync(["show", "\(commit.sha):\(path)"])
+    }
+    
+    private func parseTreeOutput(_ output: String) -> [TreeEntry] {
+        return output.components(separatedBy: "\n")
+            .filter { !$0.isEmpty }
+            .compactMap { line -> TreeEntry? in
+                // Format: <mode> <type> <object> <size>\t<path>
+                // Example: 100644 blob abc123 1234    src/main.swift
+                let parts = line.components(separatedBy: "\t")
+                guard parts.count >= 2 else { return nil }
+                
+                let metaParts = parts[0].components(separatedBy: " ").filter { !$0.isEmpty }
+                guard metaParts.count >= 4 else { return nil }
+                
+                let mode = metaParts[0]
+                let type = metaParts[1] // blob or tree
+                let size = Int(metaParts[3]) ?? 0
+                let path = parts[1]
+                
+                return TreeEntry(
+                    mode: mode,
+                    type: type == "tree" ? .directory : .file,
+                    path: path,
+                    size: size
+                )
+            }
+    }
+    
     // Synchronous versions (kept for backward compatibility)
     func diff(for commit: GitCommit) -> String {
         return runGit(["show", commit.sha, "--format="])
