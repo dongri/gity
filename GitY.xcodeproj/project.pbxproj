@@ -27,6 +27,7 @@
 		018 /* DirectoryWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118 /* DirectoryWatcher.swift */; };
 		019 /* RelativeDateFormatter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 119 /* RelativeDateFormatter.swift */; };
 		021 /* GitDirectoryWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 120 /* GitDirectoryWatcher.swift */; };
+		022 /* View+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 121 /* View+Extensions.swift */; };
 		020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 200 /* Assets.xcassets */; };
 /* End PBXBuildFile section */
 
@@ -52,6 +53,7 @@
 		118 /* DirectoryWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectoryWatcher.swift; sourceTree = "<group>"; };
 		119 /* RelativeDateFormatter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelativeDateFormatter.swift; sourceTree = "<group>"; };
 		120 /* GitDirectoryWatcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitDirectoryWatcher.swift; sourceTree = "<group>"; };
+		121 /* View+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Extensions.swift"; sourceTree = "<group>"; };
 		200 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		201 /* GitY.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GitY.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -115,6 +117,7 @@
 				109 /* StashDetailView.swift */,
 				110 /* SubmoduleDetailView.swift */,
 				111 /* PreferencesView.swift */,
+				121 /* View+Extensions.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -249,6 +252,7 @@
 				018 /* DirectoryWatcher.swift in Sources */,
 				021 /* GitDirectoryWatcher.swift in Sources */,
 				019 /* RelativeDateFormatter.swift in Sources */,
+				022 /* View+Extensions.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

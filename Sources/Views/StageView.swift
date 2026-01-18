@@ -12,23 +12,53 @@ struct StageView: View {
     @ObservedObject var repository: GitRepository
     @State private var commitMessage: String = ""
     @State private var isAmend: Bool = false
-    @State private var selectedUnstagedFile: ChangedFile?
-    @State private var selectedStagedFile: ChangedFile?
+    @State private var selectedUnstagedFileIDs: Set<String> = []
+    @State private var selectedStagedFileIDs: Set<String> = []
     @State private var diffContent: String = ""
     @State private var isCommitting: Bool = false
     @State private var isLoadingDiff: Bool = false
     @State private var diffLoadTask: Task<Void, Never>?
     @FocusState private var isCommitMessageFocused: Bool
     
+    // Helper computed properties for selected files
+    private var selectedUnstagedFiles: [ChangedFile] {
+        repository.unstagedFiles.filter { selectedUnstagedFileIDs.contains($0.id) }
+    }
+    
+    private var selectedStagedFiles: [ChangedFile] {
+        repository.stagedFiles.filter { selectedStagedFileIDs.contains($0.id) }
+    }
+    
+    private var isMultipleSelection: Bool {
+        selectedUnstagedFileIDs.count > 1 || selectedStagedFileIDs.count > 1
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Diff view at top
             ZStack {
-                DiffView(content: diffContent, filePath: selectedFile?.path)
-                    .frame(minHeight: 200)
-                    .opacity(isLoadingDiff ? 0.3 : 1.0)
+                if isMultipleSelection {
+                    // Multiple selection - don't show diff
+                    VStack {
+                        Image(systemName: "doc.on.doc")
+                            .font(.system(size: 48))
+                            .foregroundColor(.secondary)
+                        Text("\(selectedUnstagedFileIDs.count + selectedStagedFileIDs.count) files selected")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                        Text("Double-click to stage/unstage all selected files")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(nsColor: .textBackgroundColor))
+                } else {
+                    DiffView(content: diffContent, filePath: selectedFile?.path)
+                        .frame(minHeight: 200)
+                        .opacity(isLoadingDiff ? 0.3 : 1.0)
+                }
                 
-                if isLoadingDiff {
+                if isLoadingDiff && !isMultipleSelection {
                     ProgressView("Loading diff...")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(Color.black.opacity(0.1))
@@ -61,9 +91,9 @@ struct StageView: View {
                     
                     FileListView(
                         files: repository.unstagedFiles,
-                        selectedFile: $selectedUnstagedFile,
-                        onDoubleClick: { file in
-                            stageFile(file)
+                        selectedFileIDs: $selectedUnstagedFileIDs,
+                        onDoubleClick: {
+                            stageSelectedUnstagedFiles()
                         },
                         onDiscard: { file in
                             discardFile(file)
@@ -132,9 +162,9 @@ struct StageView: View {
                     
                     FileListView(
                         files: repository.stagedFiles,
-                        selectedFile: $selectedStagedFile,
-                        onDoubleClick: { file in
-                            unstageFile(file)
+                        selectedFileIDs: $selectedStagedFileIDs,
+                        onDoubleClick: {
+                            unstageSelectedStagedFiles()
                         }
                     )
                 }
@@ -142,23 +172,39 @@ struct StageView: View {
             }
             .frame(height: 280)
         }
-        .onChange(of: selectedUnstagedFile) { file in
-            if let file = file {
-                selectedStagedFile = nil
+        .onChange(of: selectedUnstagedFileIDs) { newIDs in
+            if !newIDs.isEmpty {
+                selectedStagedFileIDs = []
                 diffLoadTask?.cancel()
-                loadDiffAsync(for: file)
-            } else if selectedStagedFile == nil {
+                
+                // Only load diff for single selection
+                if newIDs.count == 1, let fileID = newIDs.first,
+                   let file = repository.unstagedFiles.first(where: { $0.id == fileID }) {
+                    loadDiffAsync(for: file)
+                } else {
+                    isLoadingDiff = false
+                    diffContent = ""
+                }
+            } else if selectedStagedFileIDs.isEmpty {
                 diffLoadTask?.cancel()
                 isLoadingDiff = false
                 diffContent = ""
             }
         }
-        .onChange(of: selectedStagedFile) { file in
-            if let file = file {
-                selectedUnstagedFile = nil
+        .onChange(of: selectedStagedFileIDs) { newIDs in
+            if !newIDs.isEmpty {
+                selectedUnstagedFileIDs = []
                 diffLoadTask?.cancel()
-                loadDiffAsync(for: file)
-            } else if selectedUnstagedFile == nil {
+                
+                // Only load diff for single selection
+                if newIDs.count == 1, let fileID = newIDs.first,
+                   let file = repository.stagedFiles.first(where: { $0.id == fileID }) {
+                    loadDiffAsync(for: file)
+                } else {
+                    isLoadingDiff = false
+                    diffContent = ""
+                }
+            } else if selectedUnstagedFileIDs.isEmpty {
                 diffLoadTask?.cancel()
                 isLoadingDiff = false
                 diffContent = ""
@@ -179,7 +225,13 @@ struct StageView: View {
     }
     
     private var selectedFile: ChangedFile? {
-        selectedUnstagedFile ?? selectedStagedFile
+        if selectedUnstagedFileIDs.count == 1, let id = selectedUnstagedFileIDs.first {
+            return repository.unstagedFiles.first { $0.id == id }
+        }
+        if selectedStagedFileIDs.count == 1, let id = selectedStagedFileIDs.first {
+            return repository.stagedFiles.first { $0.id == id }
+        }
+        return nil
     }
     
     private func loadDiffAsync(for file: ChangedFile) {
@@ -207,6 +259,30 @@ struct StageView: View {
     private func unstageFile(_ file: ChangedFile) {
         Task {
             try? await repository.unstage(files: [file])
+        }
+    }
+    
+    private func stageSelectedUnstagedFiles() {
+        let filesToStage = selectedUnstagedFiles
+        guard !filesToStage.isEmpty else { return }
+        
+        Task {
+            try? await repository.stage(files: filesToStage)
+            await MainActor.run {
+                selectedUnstagedFileIDs = []
+            }
+        }
+    }
+    
+    private func unstageSelectedStagedFiles() {
+        let filesToUnstage = selectedStagedFiles
+        guard !filesToUnstage.isEmpty else { return }
+        
+        Task {
+            try? await repository.unstage(files: filesToUnstage)
+            await MainActor.run {
+                selectedStagedFileIDs = []
+            }
         }
     }
     
@@ -263,38 +339,195 @@ struct StageView: View {
 
 // MARK: - File List View
 
-struct FileListView: View {
+struct FileListView: NSViewRepresentable {
     let files: [ChangedFile]
-    @Binding var selectedFile: ChangedFile?
-    let onDoubleClick: (ChangedFile) -> Void
+    @Binding var selectedFileIDs: Set<String>
+    let onDoubleClick: () -> Void
     var onDiscard: ((ChangedFile) -> Void)? = nil
     
-    var body: some View {
-        List(files, id: \.id, selection: Binding(
-            get: { selectedFile?.id },
-            set: { newID in
-                selectedFile = files.first { $0.id == newID }
-            }
-        )) { file in
-            FileRow(file: file, isSelected: selectedFile?.id == file.id)
-                .tag(file.id)
-                .contentShape(Rectangle())
-                .simultaneousGesture(TapGesture(count: 2).onEnded {
-                    onDoubleClick(file)
-                })
-                .simultaneousGesture(TapGesture().onEnded {
-                    selectedFile = file
-                })
-                .pointingHandCursor()
-                .contextMenu {
-                    if let onDiscard = onDiscard {
-                        Button("Discard Changes") {
-                            onDiscard(file)
-                        }
-                    }
-                }
+    func makeNSView(context: Context) -> NSScrollView {
+        let scrollView = NSScrollView()
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = false
+        scrollView.autohidesScrollers = true
+        
+        let tableView = NSTableView()
+        tableView.style = .plain
+        tableView.backgroundColor = .clear
+        tableView.selectionHighlightStyle = .regular
+        tableView.allowsMultipleSelection = true
+        tableView.allowsEmptySelection = true
+        tableView.rowHeight = 24
+        tableView.intercellSpacing = NSSize(width: 0, height: 2)
+        tableView.headerView = nil
+        tableView.usesAlternatingRowBackgroundColors = false
+        
+        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("file"))
+        column.width = 300
+        column.minWidth = 100
+        column.resizingMask = .autoresizingMask
+        tableView.addTableColumn(column)
+        
+        tableView.delegate = context.coordinator
+        tableView.dataSource = context.coordinator
+        tableView.doubleAction = #selector(Coordinator.handleDoubleClick(_:))
+        tableView.target = context.coordinator
+        
+        // Add menu for right-click
+        if onDiscard != nil {
+            let menu = NSMenu()
+            let discardItem = NSMenuItem(title: "Discard Changes", action: #selector(Coordinator.handleDiscard(_:)), keyEquivalent: "")
+            discardItem.target = context.coordinator
+            menu.addItem(discardItem)
+            tableView.menu = menu
         }
-        .listStyle(.plain)
+        
+        scrollView.documentView = tableView
+        context.coordinator.tableView = tableView
+        
+        return scrollView
+    }
+    
+    func updateNSView(_ scrollView: NSScrollView, context: Context) {
+        guard let tableView = scrollView.documentView as? NSTableView else { return }
+        
+        let oldFiles = context.coordinator.files
+        let filesChanged = files.map { $0.id } != oldFiles.map { $0.id }
+        
+        context.coordinator.files = files
+        context.coordinator.selectedFileIDs = selectedFileIDs
+        context.coordinator.onDoubleClick = onDoubleClick
+        context.coordinator.onDiscard = onDiscard
+        context.coordinator.updateSelection = { newSelection in
+            // Use binding directly - this is a struct so no weak reference needed
+            DispatchQueue.main.async {
+                self.selectedFileIDs = newSelection
+            }
+        }
+        
+        // Only reload if files changed
+        if filesChanged {
+            tableView.reloadData()
+        }
+        
+        // Restore selection only if it doesn't match current
+        let selectedIndices = IndexSet(files.enumerated().compactMap { index, file in
+            selectedFileIDs.contains(file.id) ? index : nil
+        })
+        
+        if tableView.selectedRowIndexes != selectedIndices {
+            context.coordinator.isUpdatingSelection = true
+            tableView.selectRowIndexes(selectedIndices, byExtendingSelection: false)
+            context.coordinator.isUpdatingSelection = false
+        }
+    }
+    
+    func makeCoordinator() -> Coordinator {
+        Coordinator(files: files, selectedFileIDs: selectedFileIDs, onDoubleClick: onDoubleClick, onDiscard: onDiscard)
+    }
+    
+    class Coordinator: NSObject, NSTableViewDelegate, NSTableViewDataSource {
+        var files: [ChangedFile]
+        var selectedFileIDs: Set<String>
+        var onDoubleClick: () -> Void
+        var onDiscard: ((ChangedFile) -> Void)?
+        var updateSelection: ((Set<String>) -> Void)?
+        weak var tableView: NSTableView?
+        var isUpdatingSelection = false
+        
+        init(files: [ChangedFile], selectedFileIDs: Set<String>, onDoubleClick: @escaping () -> Void, onDiscard: ((ChangedFile) -> Void)?) {
+            self.files = files
+            self.selectedFileIDs = selectedFileIDs
+            self.onDoubleClick = onDoubleClick
+            self.onDiscard = onDiscard
+        }
+        
+        func numberOfRows(in tableView: NSTableView) -> Int {
+            files.count
+        }
+        
+        func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
+            let file = files[row]
+            
+            let cellView = NSTableCellView()
+            cellView.identifier = NSUserInterfaceItemIdentifier("FileCell")
+            
+            let stackView = NSStackView()
+            stackView.orientation = .horizontal
+            stackView.spacing = 8
+            stackView.alignment = .centerY
+            stackView.translatesAutoresizingMaskIntoConstraints = false
+            
+            // Status indicator
+            let statusView = NSView()
+            statusView.wantsLayer = true
+            statusView.layer?.backgroundColor = file.status.color.cgColor
+            statusView.layer?.cornerRadius = 4
+            statusView.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                statusView.widthAnchor.constraint(equalToConstant: 8),
+                statusView.heightAnchor.constraint(equalToConstant: 8)
+            ])
+            
+            // File icon
+            let iconView = NSImageView(image: file.icon)
+            iconView.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                iconView.widthAnchor.constraint(equalToConstant: 16),
+                iconView.heightAnchor.constraint(equalToConstant: 16)
+            ])
+            
+            // File name
+            let nameLabel = NSTextField(labelWithString: file.filename)
+            nameLabel.lineBreakMode = .byTruncatingTail
+            nameLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            
+            // Directory
+            let dirLabel = NSTextField(labelWithString: file.directory)
+            dirLabel.font = NSFont.systemFont(ofSize: NSFont.smallSystemFontSize)
+            dirLabel.textColor = .secondaryLabelColor
+            dirLabel.lineBreakMode = .byTruncatingHead
+            dirLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+            
+            stackView.addArrangedSubview(statusView)
+            stackView.addArrangedSubview(iconView)
+            stackView.addArrangedSubview(nameLabel)
+            stackView.addArrangedSubview(dirLabel)
+            
+            cellView.addSubview(stackView)
+            NSLayoutConstraint.activate([
+                stackView.leadingAnchor.constraint(equalTo: cellView.leadingAnchor, constant: 4),
+                stackView.trailingAnchor.constraint(equalTo: cellView.trailingAnchor, constant: -4),
+                stackView.centerYAnchor.constraint(equalTo: cellView.centerYAnchor)
+            ])
+            
+            return cellView
+        }
+        
+        func tableViewSelectionDidChange(_ notification: Notification) {
+            guard !isUpdatingSelection else { return }
+            guard let tableView = notification.object as? NSTableView else { return }
+            let selectedRows = tableView.selectedRowIndexes
+            var newSelection = Set<String>()
+            for row in selectedRows {
+                if row < files.count {
+                    newSelection.insert(files[row].id)
+                }
+            }
+            updateSelection?(newSelection)
+        }
+        
+        @objc func handleDoubleClick(_ sender: NSTableView) {
+            if sender.clickedRow >= 0 {
+                onDoubleClick()
+            }
+        }
+        
+        @objc func handleDiscard(_ sender: NSMenuItem) {
+            guard let tableView = tableView, tableView.clickedRow >= 0 && tableView.clickedRow < files.count else { return }
+            let file = files[tableView.clickedRow]
+            onDiscard?(file)
+        }
     }
 }
 
