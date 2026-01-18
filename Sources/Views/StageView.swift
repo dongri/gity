@@ -23,8 +23,17 @@ struct StageView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Diff view at top
-            DiffView(content: diffContent, filePath: selectedFile?.path)
-                .frame(minHeight: 200)
+            ZStack {
+                DiffView(content: diffContent, filePath: selectedFile?.path)
+                    .frame(minHeight: 200)
+                    .opacity(isLoadingDiff ? 0.3 : 1.0)
+                
+                if isLoadingDiff {
+                    ProgressView("Loading diff...")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(Color.black.opacity(0.1))
+                }
+            }
             
             Divider()
             
@@ -253,12 +262,12 @@ struct FileListView: View {
             FileRow(file: file, isSelected: selectedFile?.id == file.id)
                 .tag(file.id)
                 .contentShape(Rectangle())
-                .onTapGesture(count: 2) {
+                .simultaneousGesture(TapGesture(count: 2).onEnded {
                     onDoubleClick(file)
-                }
-                .onTapGesture(count: 1) {
+                })
+                .simultaneousGesture(TapGesture().onEnded {
                     selectedFile = file
-                }
+                })
         }
         .listStyle(.plain)
     }

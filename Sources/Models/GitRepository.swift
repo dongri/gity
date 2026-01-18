@@ -756,8 +756,11 @@ class GitRepository: ObservableObject {
             return await runGitAsync(["diff", "--cached", "--", file.path])
         } else if file.status == .untracked {
             // For untracked files, show the file content
-            let filePath = workingDirectory.appendingPathComponent(file.path)
-            return (try? String(contentsOf: filePath, encoding: .utf8)) ?? ""
+            let workingDir = workingDirectory
+            return await Task.detached(priority: .userInitiated) {
+                let filePath = workingDir.appendingPathComponent(file.path)
+                return (try? String(contentsOf: filePath, encoding: .utf8)) ?? ""
+            }.value
         } else {
             return await runGitAsync(["diff", "--", file.path])
         }
