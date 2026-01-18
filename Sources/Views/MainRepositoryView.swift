@@ -23,6 +23,14 @@ struct MainRepositoryView: View {
     @State private var selection: SidebarSelection = .stage
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
     
+    // Toast state
+    @State private var showToast: Bool = false
+    @State private var toastMessage: String = ""
+    @State private var isToastError: Bool = false
+    
+    // Action loading states
+    @State private var loadingActions: Set<String> = []
+    
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             SidebarView(repository: repository, selection: $selection)
@@ -48,47 +56,136 @@ struct MainRepositoryView: View {
                 toolbarContent
             }
         }
+        .overlay(alignment: .top) {
+            if showToast {
+                HStack(spacing: 8) {
+                    Image(systemName: isToastError ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                        .foregroundColor(isToastError ? .red : .green)
+                    Text(toastMessage)
+                        .foregroundColor(.primary)
+                        .font(.body)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(.regularMaterial)
+                .cornerRadius(20)
+                .shadow(radius: 4)
+                .padding(.top, 20)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .id(toastMessage) // Force recreate on message change
+                .zIndex(100)
+            }
+        }
     }
     
     @ViewBuilder
     private var toolbarContent: some View {
         Button {
-            Task {
-                try? await repository.fetch()
+            performAction(name: "Fetch") {
+                try await repository.fetch()
             }
         } label: {
-            Label("Fetch", systemImage: "arrow.down")
+            if loadingActions.contains("Fetch") {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(width: 16, height: 16)
+            } else {
+                Label("Fetch", systemImage: "arrow.down")
+            }
         }
         .help("Fetch from remote")
+        .disabled(loadingActions.contains("Fetch"))
         
         Button {
-            Task {
-                try? await repository.pull()
+            performAction(name: "Pull") {
+                try await repository.pull()
             }
         } label: {
-            Label("Pull", systemImage: "arrow.down.circle")
+            if loadingActions.contains("Pull") {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(width: 16, height: 16)
+            } else {
+                Label("Pull", systemImage: "arrow.down.circle")
+            }
         }
         .help("Pull from remote")
+        .disabled(loadingActions.contains("Pull"))
         
         Button {
-            Task {
-                try? await repository.push()
+            performAction(name: "Push") {
+                try await repository.push()
             }
         } label: {
-            Label("Push", systemImage: "arrow.up.circle")
+            if loadingActions.contains("Push") {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(width: 16, height: 16)
+            } else {
+                Label("Push", systemImage: "arrow.up.circle")
+            }
         }
         .help("Push to remote")
+        .disabled(loadingActions.contains("Push"))
         
         Divider()
         
         Button {
-            Task {
+            performAction(name: "Refresh") {
                 await repository.reloadAll()
                 await repository.loadCommits()
             }
         } label: {
-            Label("Refresh", systemImage: "arrow.clockwise")
+            if loadingActions.contains("Refresh") {
+                ProgressView()
+                    .controlSize(.small)
+                    .frame(width: 16, height: 16)
+            } else {
+                Label("Refresh", systemImage: "arrow.clockwise")
+            }
         }
         .help("Refresh repository")
+        .disabled(loadingActions.contains("Refresh"))
+    }
+    
+    private func performAction(name: String, action: @escaping () async throws -> Void) {
+        guard !loadingActions.contains(name) else { return }
+        
+        withAnimation {
+            _ = loadingActions.insert(name)
+        }
+        
+        Task {
+            do {
+                try await action()
+                withAnimation {
+                    _ = loadingActions.remove(name)
+                }
+                showToast("\(name) completed successfully")
+            } catch {
+                withAnimation {
+                    _ = loadingActions.remove(name)
+                }
+                showToast("\(name) failed: \(error.localizedDescription)", isError: true)
+            }
+        }
+    }
+    
+    private func showToast(_ message: String, isError: Bool = false) {
+        withAnimation {
+            self.toastMessage = message
+            self.isToastError = isError
+            self.showToast = true
+        }
+        
+        // Auto hide after 3 seconds
+        Task {
+            try? await Task.sleep(nanoseconds: 3 * 1_000_000_000)
+            if self.toastMessage == message {
+                withAnimation {
+                    self.showToast = false
+                }
+            }
+        }
     }
 }

@@ -681,7 +681,23 @@ class GitRepository: ObservableObject {
         if let branch = branch {
             args.append(branch)
         }
+        
         let output = await runGitAsync(args)
+        
+        // Handle "no upstream branch" error automatically
+        if output.contains("no upstream branch") {
+            if let currentBranchName = currentBranch?.name {
+                // Try setting upstream to origin by default
+                let upstreamArgs = ["push", "--set-upstream", "origin", currentBranchName]
+                let upstreamOutput = await runGitAsync(upstreamArgs)
+                
+                if upstreamOutput.contains("fatal") || upstreamOutput.contains("rejected") {
+                    throw GitError.pushFailed(upstreamOutput)
+                }
+                return // Success
+            }
+        }
+        
         if output.contains("fatal") || output.contains("rejected") {
             throw GitError.pushFailed(output)
         }
