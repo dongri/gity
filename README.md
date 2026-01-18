@@ -12,7 +12,7 @@ GitY is a complete rewrite of the classic GitX application in Swift, featuring t
 
 ## Screenshots
 
-Coming soon...
+![History View](Screenshots/history-view.png)
 
 ## Installation
 
