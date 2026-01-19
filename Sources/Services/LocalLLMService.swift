@@ -82,34 +82,40 @@ class LocalLLMService: ObservableObject {
             Task { await loadModel() }
         }
     }
-    
+        
     let models: [AIModel] = [
         AIModel(
-            id: "qwen2.5-0.5b",
-            name: "Qwen 2.5 Coder 0.5B",
-            sizeDescription: "~0.4 GB",
-            url: URL(string: "https://huggingface.co/Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF/resolve/main/qwen2.5-coder-0.5b-instruct-q4_k_m.gguf")!,
+            id: "qwen2.5-coder-0.5b",
+            name: "Qwen2.5-Coder-0.5B-Instruct",
+            sizeDescription: "≈0.49 GB · Q4_K_M",
+            url: URL(string:
+                "https://huggingface.co/Qwen/Qwen2.5-Coder-0.5B-Instruct-GGUF/resolve/main/qwen2.5-coder-0.5b-instruct-q4_k_m.gguf"
+            )!,
             filename: "qwen2.5-coder-0.5b-instruct-q4_k_m.gguf",
             template: .chatML()
         ),
         AIModel(
-            id: "llama-3.2-1b",
-            name: "Llama 3.2 1B Instruct",
-            sizeDescription: "~0.8 GB",
-            url: URL(string: "https://huggingface.co/hugging-quants/Llama-3.2-1B-Instruct-Q4_K_M-GGUF/resolve/main/llama-3.2-1b-instruct-q4_k_m.gguf")!,
-            filename: "llama-3.2-1b-instruct-q4_k_m.gguf",
-            template: .llama()
+            id: "smollm2-360m",
+            name: "SmolLM2-360M-Instruct",
+            sizeDescription: "≈0.38 GB · Q8_0",
+            url: URL(string:
+                "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct-GGUF/resolve/main/smollm2-360m-instruct-q8_0.gguf"
+            )!,
+            filename: "smollm2-360m-instruct-q8_0.gguf",
+            template: .chatML()
         ),
         AIModel(
-            id: "deepseek-coder-1.3b",
-            name: "DeepSeek Coder 1.3B",
-            sizeDescription: "~0.9 GB",
-            url: URL(string: "https://huggingface.co/TheBloke/deepseek-coder-1.3b-instruct-GGUF/resolve/main/deepseek-coder-1.3b-instruct.Q4_K_M.gguf")!,
-            filename: "deepseek-coder-1.3b-instruct.Q4_K_M.gguf",
+            id: "llama3.2-1b-instruct",
+            name: "Llama-3.2-1B-Instruct",
+            sizeDescription: "≈0.80 GB · Q4_K_M",
+            url: URL(string:
+                "https://huggingface.co/hieupt/Llama-3.2-1B-Instruct-Q4_K_M-GGUF/resolve/main/llama-3.2-1b-instruct-q4_k_m.gguf"
+            )!,
+            filename: "llama-3.2-1b-instruct-q4_k_m.gguf",
             template: .chatML()
         )
     ]
-    
+
     var currentModel: AIModel? {
         models.first { $0.id == selectedModelId }
     }
