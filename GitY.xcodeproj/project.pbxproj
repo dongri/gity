@@ -29,10 +29,12 @@
 		020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 200 /* Assets.xcassets */; };
 		021 /* GitDirectoryWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 120 /* GitDirectoryWatcher.swift */; };
 		022 /* View+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 121 /* View+Extensions.swift */; };
+		A85E1FB5577507F2B2DB6F79 /* LocalLLMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 043948729140AEB1264630F0 /* LocalLLMService.swift */; };
 		E683A7EE1ACC5ADDA2C9F1B3 /* TreeEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42EF712F30B5056EC712D606 /* TreeEntry.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		043948729140AEB1264630F0 /* LocalLLMService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocalLLMService.swift; sourceTree = "<group>"; };
 		100 /* GitY.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GitY.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		101 /* GitYApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitYApp.swift; sourceTree = "<group>"; };
 		102 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -135,6 +137,7 @@
 		504 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				043948729140AEB1264630F0 /* LocalLLMService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -257,6 +260,7 @@
 				019 /* RelativeDateFormatter.swift in Sources */,
 				022 /* View+Extensions.swift in Sources */,
 				E683A7EE1ACC5ADDA2C9F1B3 /* TreeEntry.swift in Sources */,
+				A85E1FB5577507F2B2DB6F79 /* LocalLLMService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
