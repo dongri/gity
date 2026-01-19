@@ -210,9 +210,6 @@ class LocalLLMService: ObservableObject {
             return
         }
         
-        // Reload if model changed or not loaded
-        // We can't easily check if loaded bot matches current model file provided by simpler API,
-        // so we just reload. Optimizing this would require tracking loaded path.
         bot = LLM(from: path, template: model.template)
     }
     
@@ -258,54 +255,21 @@ class LocalLLMService: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] text in
                 guard let self = self else { return }
-                let cleaned = self.simpleClean(text)
-                if !cleaned.isEmpty {
-                    self.generatedMessage = cleaned
+                if !text.isEmpty {
+                    self.generatedMessage = text
                 }
             }
 
         await bot.respond(to: prompt)
 
-        let finalMessage = simpleClean(bot.output)
-        if !finalMessage.isEmpty {
-            generatedMessage = finalMessage
+        if !bot.output.isEmpty {
+            generatedMessage = bot.output
         }
 
         outputSubscription?.cancel()
         outputSubscription = nil
 
         isGenerating = false
-    }
-
-    /// Simple cleaning of LLM output
-    private func simpleClean(_ text: String) -> String {
-        var result = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        
-        // Remove common special tokens
-        let tokensToRemove = [
-            "<|im_end|>", "<|im_start|>", "<|endoftext|>",
-            "<<sys>>", "<</sys>>", "[INST]", "[/INST]", "</s>",
-            "<|eot_id|>", "<|assistant|>", "<|user|>"
-        ]
-        
-        for token in tokensToRemove {
-            result = result.replacingOccurrences(of: token, with: "")
-        }
-        
-        // Remove quotes
-        result = result.trimmingCharacters(in: CharacterSet(charactersIn: "\"'`"))
-        
-        // Take first line only
-        if let firstLine = result.split(separator: "\n").first {
-            result = String(firstLine).trimmingCharacters(in: .whitespacesAndNewlines)
-        }
-        
-        // Limit length
-        if result.count > 72 {
-            result = String(result.prefix(72))
-        }
-        
-        return result
     }
 
 }
