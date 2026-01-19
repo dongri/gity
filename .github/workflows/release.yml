@@ -64,8 +64,8 @@ jobs:
           -configuration Release \
           -derivedDataPath build \
           -skipMacroValidation \
-          CODE_SIGN_IDENTITY="Developer ID Application: Dongri Jin (${{ secrets.APPLE_TEAM_ID }})" \
-          OTHER_CODE_SIGN_FLAGS="--timestamp --options=runtime" \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO \
           build
         
         # Re-sign the app with correct entitlements (removes get-task-allow)
