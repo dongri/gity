@@ -224,7 +224,7 @@ struct StageView: View {
             }
             .frame(height: 280)
         }
-        .onChange(of: selectedUnstagedFileIDs) { newIDs in
+        .onChange(of: selectedUnstagedFileIDs) { _, newIDs in
             if !newIDs.isEmpty {
                 selectedStagedFileIDs = []
                 diffLoadTask?.cancel()
@@ -243,7 +243,7 @@ struct StageView: View {
                 diffContent = ""
             }
         }
-        .onChange(of: selectedStagedFileIDs) { newIDs in
+        .onChange(of: selectedStagedFileIDs) { _, newIDs in
             if !newIDs.isEmpty {
                 selectedUnstagedFileIDs = []
                 diffLoadTask?.cancel()
@@ -270,12 +270,12 @@ struct StageView: View {
                 }
             }
         }
-        .onChange(of: llmService.generatedMessage) { newMessage in
+        .onChange(of: llmService.generatedMessage) { _, newMessage in
             if !newMessage.isEmpty {
                 commitMessage = newMessage
             }
         }
-        .onChange(of: llmService.errorMessage) { errorMsg in
+        .onChange(of: llmService.errorMessage) { _, errorMsg in
             if let errorMsg = errorMsg {
                 // We need to run this on main thread, but onChange is already on main actor context?
                 // runModal blocks, so usually safer to use alert(item:) modifier in SwiftUI,
