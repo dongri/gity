@@ -6,6 +6,11 @@
 //
 
 import SwiftUI
+import Foundation
+
+extension Notification.Name {
+    static let openAISettings = Notification.Name("openAISettings")
+}
 
 struct PreferencesView: View {
     @AppStorage("showStageViewOnOpen") private var showStageViewOnOpen = true
@@ -14,6 +19,7 @@ struct PreferencesView: View {
     @AppStorage("diffContextLines") private var diffContextLines = 3
     @AppStorage("useMonospaceFont") private var useMonospaceFont = true
     
+    @State private var selectedTab = 0
     @State private var cliInstallStatus: CLIInstallStatus = .notInstalled
     @State private var isInstallingCLI = false
     @State private var installError: String?
@@ -23,7 +29,7 @@ struct PreferencesView: View {
     @State private var gitPathText: String = "Loading..."
     
     var body: some View {
-        TabView {
+        TabView(selection: $selectedTab) {
             // General
             Form {
                 Section {
@@ -51,6 +57,7 @@ struct PreferencesView: View {
             .tabItem {
                 Label("General", systemImage: "gear")
             }
+            .tag(0)
             
             // Diff
             Form {
@@ -72,6 +79,7 @@ struct PreferencesView: View {
             .tabItem {
                 Label("Diff", systemImage: "doc.text")
             }
+            .tag(1)
             
             // Git
             Form {
@@ -97,6 +105,7 @@ struct PreferencesView: View {
             .onAppear {
                 loadGitInfo()
             }
+            .tag(2)
             
             // Integration
             Form {
@@ -196,8 +205,26 @@ struct PreferencesView: View {
             .onAppear {
                 checkCLIInstallStatus()
             }
+            .tag(3)
+            
+            // AI
+            AIPreferencesView()
+                .padding(20)
+                .tabItem {
+                    Label("AI", systemImage: "brain")
+                }
+                .tag(4)
         }
         .frame(width: 500, height: 320)
+        .onAppear {
+            if UserDefaults.standard.bool(forKey: "OpenAISettingsOnLoad") {
+                selectedTab = 4
+                UserDefaults.standard.set(false, forKey: "OpenAISettingsOnLoad")
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .openAISettings)) { _ in
+            selectedTab = 4
+        }
     }
     
     // MARK: - CLI Installation
@@ -312,6 +339,91 @@ struct PreferencesView: View {
             return String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "/usr/bin/git"
         } catch {
             return "/usr/bin/git"
+        }
+    }
+}
+
+// MARK: - AI Preferences View
+
+struct AIPreferencesView: View {
+    @ObservedObject var llmService = LocalLLMService.shared
+    
+    var body: some View {
+        Form {
+            Section(header: Text("Models")) {
+                List(llmService.models) { model in
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(model.name)
+                                .font(.headline)
+                            Text(model.sizeDescription)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        if llmService.isModelDownloaded(id: model.id) {
+                            if llmService.selectedModelId == model.id {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .foregroundColor(.green)
+                                
+                                Button(action: {
+                                    llmService.deleteModel(id: model.id)
+                                }) {
+                                    Image(systemName: "trash")
+                                        .foregroundColor(.red)
+                                }
+                                .buttonStyle(.plain)
+                                .pointingHandCursor()
+                            } else {
+                                Button("Select") {
+                                    llmService.selectedModelId = model.id
+                                }
+                                .pointingHandCursor()
+                                
+                                Button(action: {
+                                    llmService.deleteModel(id: model.id)
+                                }) {
+                                    Image(systemName: "trash")
+                                        .foregroundColor(.red)
+                                }
+                                .buttonStyle(.plain)
+                                .pointingHandCursor()
+                            }
+                        } else {
+                            if llmService.isDownloading && llmService.downloadingModelId == model.id {
+                                HStack {
+                                    ProgressView(value: llmService.downloadProgress)
+                                        .progressViewStyle(.linear)
+                                        .frame(width: 60)
+                                    Text("\(Int(llmService.downloadProgress * 100))%")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                        .frame(width: 35, alignment: .trailing)
+                                }
+                            } else {
+                                Button("Download") {
+                                    llmService.downloadModel(id: model.id)
+                                }
+                                .pointingHandCursor()
+                                // Disable download button if another model is downloading
+                                .disabled(llmService.isDownloading)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
+                .frame(height: 200)
+            }
+            
+            if let error = llmService.errorMessage {
+                Section {
+                    Text(error)
+                        .foregroundColor(.red)
+                        .font(.caption)
+                }
+            }
         }
     }
 }

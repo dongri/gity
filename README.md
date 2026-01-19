@@ -69,6 +69,7 @@ gity /path/to/repo        # Open specific repository
 - 🔍 **Diff Viewer** - Syntax-highlighted diff viewing
 - ⚡ **Performance Optimized** - Asynchronous loading for smooth UI
 - 🖥️ **Command Line Tool** - Open repositories from Terminal
+- 🤖 **AI Commit Messages** - Generate intelligent commit messages using local LLMs
 - ✅ **Signed & Notarized** - Verified by Apple for security
 
 ## Requirements
@@ -126,6 +127,8 @@ Sources/
 │   ├── ChangedFile.swift      # File changes
 │   ├── GitStash.swift         # Stash model
 │   └── GitSubmodule.swift     # Submodule model
+├── Services/
+│   └── LocalLLMService.swift  # Local LLM integration
 ├── Views/
 │   ├── ContentView.swift      # Main content view
 │   ├── WelcomeView.swift      # Welcome screen
@@ -152,7 +155,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-GitY is released under the MIT License. See [LICENSE](LICENSE) for details.
+GitY is released under the MIT License.
 
 ## Credits
 
