@@ -185,6 +185,9 @@
 			dependencies = (
 			);
 			name = GitY;
+			packageProductDependencies = (
+				CE63AAE17E0CF47A90A8516C /* LLM */,
+			);
 			productName = GitY;
 			productReference = 100 /* GitY.app */;
 			productType = "com.apple.product-type.application";
@@ -213,6 +216,9 @@
 				Base,
 			);
 			mainGroup = 400;
+			packageReferences = (
+				B10CD1BC958BEEE150E17A2C /* XCRemoteSwiftPackageReference "LLM.swift" */,
+			);
 			productRefGroup = 700 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -320,7 +326,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -377,7 +383,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
@@ -465,6 +471,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		B10CD1BC958BEEE150E17A2C /* XCRemoteSwiftPackageReference "LLM.swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/eastriverlee/LLM.swift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.1.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		CE63AAE17E0CF47A90A8516C /* LLM */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B10CD1BC958BEEE150E17A2C /* XCRemoteSwiftPackageReference "LLM.swift" */;
+			productName = LLM;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 850 /* Project object */;
 }
