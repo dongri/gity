@@ -14,6 +14,9 @@ struct SidebarView: View {
     // Default: Tags collapsed to avoid performance issues
     @State private var expandedSections: Set<String> = ["homepage", "branches", "remotes"]
     
+    // Track expanded state for each remote (to avoid DisclosureGroup animation bug)
+    @State private var expandedRemotes: Set<String> = []
+    
     // Diff comparison sheet
     @State private var showDiffSheet: Bool = false
     @State private var diffCompareRef: GitRef? = nil
@@ -82,7 +85,24 @@ struct SidebarView: View {
                 Section {
                     if expandedSections.contains("remotes") {
                         ForEach(repository.remotes, id: \.self) { remote in
-                            DisclosureGroup {
+                            DisclosureGroup(
+                                isExpanded: Binding(
+                                    get: { expandedRemotes.contains(remote) },
+                                    set: { newValue in
+                                        DispatchQueue.main.async {
+                                            var transaction = Transaction()
+                                            transaction.disablesAnimations = true
+                                            withTransaction(transaction) {
+                                                if newValue {
+                                                    expandedRemotes.insert(remote)
+                                                } else {
+                                                    expandedRemotes.remove(remote)
+                                                }
+                                            }
+                                        }
+                                    }
+                                )
+                            ) {
                                 ForEach(remoteBranches(for: remote), id: \.self) { branch in
                                     SidebarItem(
                                         title: branch.displayName,
@@ -95,6 +115,21 @@ struct SidebarView: View {
                                 }
                             } label: {
                                 Label(remote, systemImage: "externaldrive.connected.to.line.below")
+                                    .contentShape(Rectangle())
+                                    .pointingHandCursor()
+                                    .onTapGesture {
+                                        DispatchQueue.main.async {
+                                            var transaction = Transaction()
+                                            transaction.disablesAnimations = true
+                                            withTransaction(transaction) {
+                                                if expandedRemotes.contains(remote) {
+                                                    expandedRemotes.remove(remote)
+                                                } else {
+                                                    expandedRemotes.insert(remote)
+                                                }
+                                            }
+                                        }
+                                    }
                             }
                         }
                     }
@@ -211,8 +246,8 @@ struct SidebarView: View {
             }
         }
         .listStyle(.sidebar)
-        .onChange(of: showDiffSheet) { shouldShow in
-            if shouldShow, let compareRef = diffCompareRef {
+        .onChange(of: showDiffSheet) { oldValue, newValue in
+            if newValue, let compareRef = diffCompareRef {
                 openDiffWindow(for: compareRef)
             }
         }
