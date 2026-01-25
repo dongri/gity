@@ -35,7 +35,7 @@ struct StageView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
+        VSplitView {
             // Diff view at top
             ZStack {
                 if isMultipleSelection {
@@ -66,10 +66,10 @@ struct StageView: View {
                 }
             }
             
-            Divider()
+
             
             // Bottom section: File lists and commit message
-            HStack(spacing: 0) {
+            HSplitView {
                 // Unstaged changes
                 VStack(alignment: .leading, spacing: 0) {
                     HStack {
@@ -103,7 +103,7 @@ struct StageView: View {
                 }
                 .frame(minWidth: 200)
                 
-                Divider()
+
                 
                 // Commit message
                 VStack(alignment: .leading, spacing: 0) {
@@ -190,7 +190,7 @@ struct StageView: View {
                 }
                 .frame(minWidth: 250)
                 
-                Divider()
+
                 
                 // Staged changes
                 VStack(alignment: .leading, spacing: 0) {
@@ -222,7 +222,7 @@ struct StageView: View {
                 }
                 .frame(minWidth: 200)
             }
-            .frame(height: 280)
+            .frame(minHeight: 150)
         }
         .onChange(of: selectedUnstagedFileIDs) { _, newIDs in
             if !newIDs.isEmpty {
