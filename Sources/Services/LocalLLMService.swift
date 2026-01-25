@@ -235,7 +235,7 @@ class LocalLLMService: ObservableObject {
         errorMessage = nil
 
         // Diff truncation
-        let maxDiffLength = 2000
+        let maxDiffLength = 6000
         let trimmedDiff: String
         if diff.count > maxDiffLength {
             trimmedDiff = diff.prefix(maxDiffLength) + "\n\n[Diff truncated]"
@@ -244,7 +244,18 @@ class LocalLLMService: ObservableObject {
         }
 
         // Simple prompt for all models
-        let systemPrompt = "Generate a git commit message. Format: type: description. Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert. Output only the commit message, nothing else."
+        let systemPrompt = """
+        Generate a git commit message based on the diff.
+        
+        Rules:
+        - Use Conventional Commits format: "type: subject"
+        - If multiple distinct changes are present, use a bullet list format:
+          type: summary
+          - detail 1
+          - detail 2
+        - Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert.
+        - Output ONLY the commit message, no conversational text.
+        """
         let prompt = "Diff:\n\(trimmedDiff)\n\nCommit message:"
 
         // Use chatML template for all models
