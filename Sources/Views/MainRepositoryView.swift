@@ -34,21 +34,25 @@ struct MainRepositoryView: View {
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
             SidebarView(repository: repository, selection: $selection)
-                .frame(minWidth: 180)
+                .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 350)
         } detail: {
-            switch selection {
-            case .stage:
-                StageView(repository: repository)
-            case .history, .branch, .remoteBranch, .tag:
-                HistoryView(repository: repository, selection: selection)
-            case .stash(let stash):
-                StashDetailView(repository: repository, stash: stash)
-            case .submodule(let submodule):
-                SubmoduleDetailView(repository: repository, submodule: submodule)
-            case .remote:
-                HistoryView(repository: repository, selection: selection)
+            Group {
+                switch selection {
+                case .stage:
+                    StageView(repository: repository)
+                case .history, .branch, .remoteBranch, .tag:
+                    HistoryView(repository: repository, selection: selection)
+                case .stash(let stash):
+                    StashDetailView(repository: repository, stash: stash)
+                case .submodule(let submodule):
+                    SubmoduleDetailView(repository: repository, submodule: submodule)
+                case .remote:
+                    HistoryView(repository: repository, selection: selection)
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
+        .navigationSplitViewStyle(.balanced)
         .navigationTitle(repository.projectName)
         .navigationSubtitle(repository.currentBranch?.name ?? "")
         .toolbar {
