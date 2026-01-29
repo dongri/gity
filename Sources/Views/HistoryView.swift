@@ -63,94 +63,85 @@ struct HistoryView: View {
             return nil
         }
     }
-    // Store the split ratio to maintain consistent sizing
-    @State private var splitRatio: CGFloat = 0.55
     
+
     var body: some View {
-        GeometryReader { geometry in
+        VSplitView {
+            // Commit list - takes majority of space
             VStack(spacing: 0) {
-                // Commit list - takes majority of space
-                VStack(spacing: 0) {
-                    // Toolbar
-                    HStack(spacing: 8) {
-                        // Branch filter pills
-                        Picker("", selection: $branchFilter) {
-                            Text("All").tag(BranchFilterType.all)
-                            Text("Local").tag(BranchFilterType.localRemote)
-                            Text(truncatedFilterLabel).tag(BranchFilterType.selected)
-                        }
-                        .pickerStyle(.segmented)
-                        .fixedSize()
-                        .pointingHandCursor()
-                        
-                        Spacer()
-                        
-                        // Search
-                        Picker("", selection: $searchMode) {
-                            ForEach(SearchMode.allCases, id: \.self) { mode in
-                                Text(mode.rawValue).tag(mode)
-                            }
-                        }
-                        .frame(width: 80)
-                        .pointingHandCursor()
-                        
-                        TextField("🔍 Subject, Author, SHA", text: $searchText)
-                            .textFieldStyle(.roundedBorder)
-                            .frame(width: 200)
+                // Toolbar
+                HStack(spacing: 8) {
+                    // Branch filter pills
+                    Picker("", selection: $branchFilter) {
+                        Text("All").tag(BranchFilterType.all)
+                        Text("Local").tag(BranchFilterType.localRemote)
+                        Text(truncatedFilterLabel).tag(BranchFilterType.selected)
                     }
-                    .padding(8)
-                    .background(Color(nsColor: .controlBackgroundColor))
+                    .pickerStyle(.segmented)
+                    .fixedSize()
+                    .pointingHandCursor()
                     
-                    // Commit table
-                    CommitTableView(
-                        commits: filteredCommits,
-                        selectedCommit: $selectedCommit,
-                        hasMoreCommits: !repository.isInitializing && repository.hasMoreCommits,
-                        isLoadingMore: repository.isLoadingMoreCommits,
-                        onLoadMore: {
-                            Task {
-                                await repository.loadMoreCommitsForRef(selectedGitRef, filter: branchFilter)
-                            }
-                        }
-                    )
-                }
-                .frame(height: geometry.size.height * splitRatio)
-                
-                // Resizable divider
-                ResizableDivider(
-                    totalHeight: geometry.size.height,
-                    splitRatio: $splitRatio
-                )
-                
-                // Commit detail view - fixed height area
-                Group {
-                    if let commit = selectedCommit {
-                        CommitDetailView(
-                            repository: repository,
-                            commit: commit,
-                            diffContent: diffContent,
-                            isLoadingDiff: isLoadingDiff,
-                            viewMode: $detailViewMode
-                        )
-                    } else {
-                        VStack {
-                            Spacer()
-                            Text("No file selected")
-                                .font(.title2)
-                                .foregroundColor(.secondary)
-                                .padding()
-                                .frame(maxWidth: .infinity)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color.accentColor.opacity(0.1))
-                                )
-                                .padding(.horizontal, 40)
-                            Spacer()
+                    Spacer()
+                    
+                    // Search
+                    Picker("", selection: $searchMode) {
+                        ForEach(SearchMode.allCases, id: \.self) { mode in
+                            Text(mode.rawValue).tag(mode)
                         }
                     }
+                    .frame(width: 80)
+                    .pointingHandCursor()
+                    
+                    TextField("🔍 Subject, Author, SHA", text: $searchText)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 200)
                 }
-                .frame(height: geometry.size.height * (1 - splitRatio) - 8) // 8 for divider
+                .padding(8)
+                .background(Color(nsColor: .controlBackgroundColor))
+                
+                // Commit table
+                CommitTableView(
+                    commits: filteredCommits,
+                    selectedCommit: $selectedCommit,
+                    hasMoreCommits: !repository.isInitializing && repository.hasMoreCommits,
+                    isLoadingMore: repository.isLoadingMoreCommits,
+                    onLoadMore: {
+                        Task {
+                            await repository.loadMoreCommitsForRef(selectedGitRef, filter: branchFilter)
+                        }
+                    }
+                )
             }
+            .frame(minHeight: 150, idealHeight: 300)
+            
+            // Commit detail view
+            Group {
+                if let commit = selectedCommit {
+                    CommitDetailView(
+                        repository: repository,
+                        commit: commit,
+                        diffContent: diffContent,
+                        isLoadingDiff: isLoadingDiff,
+                        viewMode: $detailViewMode
+                    )
+                } else {
+                    VStack {
+                        Spacer()
+                        Text("No file selected")
+                            .font(.title2)
+                            .foregroundColor(.secondary)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.accentColor.opacity(0.1))
+                            )
+                            .padding(.horizontal, 40)
+                        Spacer()
+                    }
+                }
+            }
+            .frame(minHeight: 150, idealHeight: 250)
         }
         .onChange(of: branchFilter) { newFilter in
             repository.currentBranchFilter = newFilter
@@ -916,40 +907,5 @@ struct CommitInfoHeader: View {
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(nsColor: .controlBackgroundColor))
-    }
-}
-
-// MARK: - Resizable Divider
-
-struct ResizableDivider: View {
-    let totalHeight: CGFloat
-    @Binding var splitRatio: CGFloat
-    
-    @State private var isDragging: Bool = false
-    
-    var body: some View {
-        Rectangle()
-            .fill(isDragging ? Color.accentColor : Color(nsColor: .separatorColor))
-            .frame(height: 8)
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture()
-                    .onChanged { value in
-                        isDragging = true
-                        let newRatio = (value.location.y + totalHeight * splitRatio) / totalHeight
-                        // Clamp to reasonable bounds (20% - 80%)
-                        splitRatio = min(max(newRatio, 0.2), 0.8)
-                    }
-                    .onEnded { _ in
-                        isDragging = false
-                    }
-            )
-            .onHover { hovering in
-                if hovering {
-                    NSCursor.resizeUpDown.push()
-                } else {
-                    NSCursor.pop()
-                }
-            }
     }
 }
