@@ -35,195 +35,192 @@ struct StageView: View {
     }
     
     var body: some View {
-        VSplitView {
-            // Diff view at top
-            ZStack {
-                if isMultipleSelection {
-                    // Multiple selection - don't show diff
-                    VStack {
-                        Image(systemName: "doc.on.doc")
-                            .font(.system(size: 48))
-                            .foregroundColor(.secondary)
-                        Text("\(selectedUnstagedFileIDs.count + selectedStagedFileIDs.count) files selected")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-                        Text("Double-click to stage/unstage all selected files")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(nsColor: .textBackgroundColor))
-                } else {
-                    DiffView(content: diffContent, filePath: selectedFile?.path)
-                        .frame(minHeight: 200)
-                        .opacity(isLoadingDiff ? 0.3 : 1.0)
-                }
-                
-                if isLoadingDiff && !isMultipleSelection {
-                    ProgressView("Loading diff...")
+        GeometryReader { geometry in
+            VSplitView {
+                // Diff view at top
+                ZStack {
+                    if isMultipleSelection {
+                        // Multiple selection - don't show diff
+                        VStack {
+                            Image(systemName: "doc.on.doc")
+                                .font(.system(size: 48))
+                                .foregroundColor(.secondary)
+                            Text("\(selectedUnstagedFileIDs.count + selectedStagedFileIDs.count) files selected")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
+                            Text("Double-click to stage/unstage all selected files")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color.black.opacity(0.1))
-                }
-            }
-            
-
-            
-            // Bottom section: File lists and commit message
-            HSplitView {
-                // Unstaged changes
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack {
-                        Text("Unstaged Changes")
-                            .font(.headline)
-                        
-                        Spacer()
-                        
-                        if !repository.unstagedFiles.isEmpty {
-                            Button("Stage All") {
-                                stageAll()
-                            }
-                            .buttonStyle(.borderless)
-                            .font(.caption)
-                            .pointingHandCursor()
-                        }
+                        .background(Color(nsColor: .textBackgroundColor))
+                    } else {
+                        DiffView(content: diffContent, filePath: selectedFile?.path)
+                            .opacity(isLoadingDiff ? 0.3 : 1.0)
                     }
-                    .padding(8)
-                    .background(Color(nsColor: .controlBackgroundColor))
                     
-                    FileListView(
-                        files: repository.unstagedFiles,
-                        selectedFileIDs: $selectedUnstagedFileIDs,
-                        onDoubleClick: {
-                            stageSelectedUnstagedFiles()
-                        },
-                        onDiscard: { file in
-                            discardFile(file)
-                        }
-                    )
+                    if isLoadingDiff && !isMultipleSelection {
+                        ProgressView("Loading diff...")
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(Color.black.opacity(0.1))
+                    }
                 }
-                .frame(minWidth: 200)
+                .frame(minHeight: 100, idealHeight: max(100, geometry.size.height * 0.4))
                 
-
-                
-                // Commit message
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack {
-                        Text("Commit Message")
-                            .font(.headline)
-                        
-                        Spacer()
-                        
-                        if llmService.isDownloading {
-                            Text("Downloading Model: \(Int(llmService.downloadProgress * 100))%")
+                // Bottom section: File lists and commit message
+                HSplitView {
+                    // Unstaged changes
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack {
+                            Text("Unstaged Changes")
+                                .font(.headline)
+                            
+                            Spacer()
+                            
+                            if !repository.unstagedFiles.isEmpty {
+                                Button("Stage All") {
+                                    stageAll()
+                                }
+                                .buttonStyle(.borderless)
                                 .font(.caption)
-                                .foregroundColor(.secondary)
-                        } else if llmService.isGenerating {
-                            Text("Generating...")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        } else {
-                            HStack(spacing: 8) {
-                                if llmService.isModelDownloaded(id: llmService.selectedModelId) {
-                                    Button(action: {
-                                        generateAICommitMessage()
-                                    }) {
-                                        Label("Generate", systemImage: "sparkles")
-                                            .labelStyle(.titleAndIcon)
-                                    }
-                                    .buttonStyle(.borderless)
+                                .pointingHandCursor()
+                            }
+                        }
+                        .padding(8)
+                        .background(Color(nsColor: .controlBackgroundColor))
+                        
+                        FileListView(
+                            files: repository.unstagedFiles,
+                            selectedFileIDs: $selectedUnstagedFileIDs,
+                            onDoubleClick: {
+                                stageSelectedUnstagedFiles()
+                            },
+                            onDiscard: { file in
+                                discardFile(file)
+                            }
+                        )
+                    }
+                    .frame(minWidth: 150, idealWidth: max(150, geometry.size.width * 0.25))
+                    
+                    // Commit message
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack {
+                            Text("Commit Message")
+                                .font(.headline)
+                            
+                            Spacer()
+                            
+                            if llmService.isDownloading {
+                                Text("Downloading Model: \(Int(llmService.downloadProgress * 100))%")
                                     .font(.caption)
-                                    .pointingHandCursor()
-                                    .help("Generate commit message from staged changes")
-                                    
-                                    // Settings button (always shown)
-                                    Button(action: {
-                                        openSettings()
-                                    }) {
-                                        Image(systemName: "gearshape")
-                                    }
-                                    .buttonStyle(.borderless)
+                                    .foregroundColor(.secondary)
+                            } else if llmService.isGenerating {
+                                Text("Generating...")
                                     .font(.caption)
-                                    .pointingHandCursor()
-                                    .help("Select AI Model")
-                                } else {
-                                    Button(action: {
-                                        openSettings()
-                                    }) {
-                                        Label("Download AI Model", systemImage: "arrow.down.circle")
-                                            .labelStyle(.titleAndIcon)
+                                    .foregroundColor(.secondary)
+                            } else {
+                                HStack(spacing: 8) {
+                                    if llmService.isModelDownloaded(id: llmService.selectedModelId) {
+                                        Button(action: {
+                                            generateAICommitMessage()
+                                        }) {
+                                            Label("Generate", systemImage: "sparkles")
+                                                .labelStyle(.titleAndIcon)
+                                        }
+                                        .buttonStyle(.borderless)
+                                        .font(.caption)
+                                        .pointingHandCursor()
+                                        .help("Generate commit message from staged changes")
+                                        
+                                        // Settings button (always shown)
+                                        Button(action: {
+                                            openSettings()
+                                        }) {
+                                            Image(systemName: "gearshape")
+                                        }
+                                        .buttonStyle(.borderless)
+                                        .font(.caption)
+                                        .pointingHandCursor()
+                                        .help("Select AI Model")
+                                    } else {
+                                        Button(action: {
+                                            openSettings()
+                                        }) {
+                                            Label("Download AI Model", systemImage: "arrow.down.circle")
+                                                .labelStyle(.titleAndIcon)
+                                        }
+                                        .buttonStyle(.borderless)
+                                        .font(.caption)
+                                        .pointingHandCursor()
+                                        .help("Go to Settings to download an AI model")
                                     }
-                                    .buttonStyle(.borderless)
-                                    .font(.caption)
-                                    .pointingHandCursor()
-                                    .help("Go to Settings to download an AI model")
                                 }
                             }
                         }
-                    }
-                    .padding(8)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(nsColor: .controlBackgroundColor))
-                    
-                    TextEditor(text: $commitMessage)
-                        .font(.system(.body, design: .monospaced))
-                        .scrollContentBackground(.hidden)
-                        .background(Color(nsColor: .textBackgroundColor))
-                        .focused($isCommitMessageFocused)
-                    
-                    HStack {
-                        Toggle("Amend", isOn: $isAmend)
-                            .toggleStyle(.checkbox)
-                            .pointingHandCursor()
+                        .padding(8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(nsColor: .controlBackgroundColor))
                         
-                        Spacer()
+                        TextEditor(text: $commitMessage)
+                            .font(.system(.body, design: .monospaced))
+                            .scrollContentBackground(.hidden)
+                            .background(Color(nsColor: .textBackgroundColor))
+                            .focused($isCommitMessageFocused)
                         
-                        Button("Commit") {
-                            commitChanges()
-                        }
-                        .keyboardShortcut(.return, modifiers: .command)
-                        .buttonStyle(.borderedProminent)
-                        .pointingHandCursor()
-                        .disabled(!canCommit)
-                    }
-                    .padding(8)
-                    .background(Color(nsColor: .controlBackgroundColor))
-                }
-                .frame(minWidth: 250)
-                
-
-                
-                // Staged changes
-                VStack(alignment: .leading, spacing: 0) {
-                    HStack {
-                        Text("Staged Changes")
-                            .font(.headline)
-                        
-                        Spacer()
-                        
-                        if !repository.stagedFiles.isEmpty {
-                            Button("Unstage All") {
-                                unstageAll()
+                        HStack {
+                            Toggle("Amend", isOn: $isAmend)
+                                .toggleStyle(.checkbox)
+                                .pointingHandCursor()
+                            
+                            Spacer()
+                            
+                            Button("Commit") {
+                                commitChanges()
                             }
-                            .buttonStyle(.borderless)
-                            .font(.caption)
+                            .keyboardShortcut(.return, modifiers: .command)
+                            .buttonStyle(.borderedProminent)
                             .pointingHandCursor()
+                            .disabled(!canCommit)
                         }
+                        .padding(8)
+                        .background(Color(nsColor: .controlBackgroundColor))
                     }
-                    .padding(8)
-                    .background(Color(nsColor: .controlBackgroundColor))
+                    .frame(minWidth: 180, idealWidth: max(180, geometry.size.width * 0.35))
                     
-                    FileListView(
-                        files: repository.stagedFiles,
-                        selectedFileIDs: $selectedStagedFileIDs,
-                        onDoubleClick: {
-                            unstageSelectedStagedFiles()
+                    // Staged changes
+                    VStack(alignment: .leading, spacing: 0) {
+                        HStack {
+                            Text("Staged Changes")
+                                .font(.headline)
+                            
+                            Spacer()
+                            
+                            if !repository.stagedFiles.isEmpty {
+                                Button("Unstage All") {
+                                    unstageAll()
+                                }
+                                .buttonStyle(.borderless)
+                                .font(.caption)
+                                .pointingHandCursor()
+                            }
                         }
-                    )
+                        .padding(8)
+                        .background(Color(nsColor: .controlBackgroundColor))
+                        
+                        FileListView(
+                            files: repository.stagedFiles,
+                            selectedFileIDs: $selectedStagedFileIDs,
+                            onDoubleClick: {
+                                unstageSelectedStagedFiles()
+                            }
+                        )
+                    }
+                    .frame(minWidth: 150, idealWidth: max(150, geometry.size.width * 0.25))
                 }
-                .frame(minWidth: 200)
+                .frame(minHeight: 120, idealHeight: max(120, geometry.size.height * 0.4))
             }
-            .frame(minHeight: 150)
         }
+        .frame(minWidth: 600, minHeight: 400)
         .onChange(of: selectedUnstagedFileIDs) { _, newIDs in
             if !newIDs.isEmpty {
                 selectedStagedFileIDs = []
