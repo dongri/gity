@@ -84,72 +84,45 @@ struct MainRepositoryView: View {
     
     @ViewBuilder
     private var toolbarContent: some View {
-        Button {
-            performAction(name: "Fetch") {
-                try await repository.fetch()
-            }
-        } label: {
-            if loadingActions.contains("Fetch") {
-                ProgressView()
-                    .controlSize(.small)
-                    .frame(width: 16, height: 16)
-            } else {
-                Label("Fetch", systemImage: "arrow.down")
-            }
+        toolbarButton(name: "Fetch", title: "Fetch", systemImage: "arrow.down", help: "Fetch from remote") {
+            try await repository.fetch()
         }
-        .help("Fetch from remote")
-        .disabled(loadingActions.contains("Fetch"))
-        .pointingHandCursor()
         
-        Button {
-            performAction(name: "Pull") {
-                try await repository.pull()
-            }
-        } label: {
-            if loadingActions.contains("Pull") {
-                ProgressView()
-                    .controlSize(.small)
-                    .frame(width: 16, height: 16)
-            } else {
-                Label("Pull", systemImage: "arrow.down.circle")
-            }
+        toolbarButton(name: "Pull", title: "Pull", systemImage: "arrow.down.circle", help: "Pull from remote") {
+            try await repository.pull()
         }
-        .help("Pull from remote")
-        .disabled(loadingActions.contains("Pull"))
-        .pointingHandCursor()
-        
-        Button {
-            performAction(name: "Push") {
-                try await repository.push()
-            }
-        } label: {
-            if loadingActions.contains("Push") {
-                ProgressView()
-                    .controlSize(.small)
-                    .frame(width: 16, height: 16)
-            } else {
-                Label("Push", systemImage: "arrow.up.circle")
-            }
+                
+        toolbarButton(name: "Push", title: "Push", systemImage: "arrow.up.circle", help: "Push to remote") {
+            try await repository.push()
         }
-        .help("Push to remote")
-        .disabled(loadingActions.contains("Push"))
-        .pointingHandCursor()
         
         Divider()
         
-        Button {
+        toolbarButton(name: "Refresh", title: "Refresh", systemImage: "arrow.clockwise", help: "Refresh repository") {
             performRefresh()
+        }
+    }
+    
+    private func toolbarButton(
+        name: String,
+        title: String,
+        systemImage: String,
+        help: String,
+        action: @escaping () async throws -> Void
+    ) -> some View {
+        Button {
+            performAction(name: name, action: action)
         } label: {
-            if loadingActions.contains("Refresh") {
+            if loadingActions.contains(name) {
                 ProgressView()
                     .controlSize(.small)
                     .frame(width: 16, height: 16)
             } else {
-                Label("Refresh", systemImage: "arrow.clockwise")
+                Label(title, systemImage: systemImage)
             }
         }
-        .help("Refresh repository")
-        .disabled(loadingActions.contains("Refresh"))
+        .help(help)
+        .disabled(loadingActions.contains(name))
         .pointingHandCursor()
     }
     
@@ -232,7 +205,7 @@ struct MainRepositoryView: View {
         
         // Auto hide after 3 seconds
         Task {
-            try? await Task.sleep(nanoseconds: 3 * 1_000_000_000)
+            try? await Task.sleep(for: .seconds(3))
             if self.toastMessage == message {
                 withAnimation {
                     self.showToast = false
