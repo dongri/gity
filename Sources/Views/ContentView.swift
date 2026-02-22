@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject private var appState = AppState.shared
+    @EnvironmentObject var appState: AppState
     
     var body: some View {
         Group {
@@ -59,16 +59,14 @@ struct ContentView: View {
 
 // MARK: - App State
 class AppState: ObservableObject {
-    static let shared = AppState()
-    
     @Published var currentRepository: GitRepository?
     @Published var recentRepositories: [URL] = []
-    
-    private init() {
+        
+    func setup() {
         loadRecentRepositories()
     }
     
-    func loadRecentRepositories() {
+    private func loadRecentRepositories() {
         if let data = UserDefaults.standard.data(forKey: "recentRepositories"),
            let urls = try? JSONDecoder().decode([URL].self, from: data) {
             recentRepositories = urls
