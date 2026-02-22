@@ -29,7 +29,7 @@ struct SidebarView: View {
             Section {
                 SidebarItem(
                     title: "Stage",
-                    icon: "square.and.pencil",
+                    icon: .system("square.and.pencil"),
                     badge: stageBadge,
                     isSelected: isStageSelected
                 )
@@ -60,7 +60,7 @@ struct SidebarView: View {
                         ForEach(repository.branches, id: \.self) { branch in
                             SidebarItem(
                                 title: branch.name,
-                                icon: "arrow.triangle.branch",
+                                icon: .system("arrow.triangle.branch"),
                                 isCurrent: branch.name == repository.currentBranch?.name
                             )
                             .tag(SidebarSelection.branch(branch))
@@ -106,7 +106,7 @@ struct SidebarView: View {
                                 ForEach(remoteBranches(for: remote), id: \.self) { branch in
                                     SidebarItem(
                                         title: branch.displayName,
-                                        icon: "arrow.triangle.branch"
+                                        icon: .system("arrow.triangle.branch")
                                     )
                                     .tag(SidebarSelection.remoteBranch(branch))
                                     .contextMenu {
@@ -156,7 +156,7 @@ struct SidebarView: View {
                             ForEach(repository.tags, id: \.self) { tag in
                                 SidebarItem(
                                     title: tag.name,
-                                    icon: "tag"
+                                    icon: .system("tag")
                                 )
                                 .tag(SidebarSelection.tag(tag))
                                 .contextMenu {
@@ -210,7 +210,7 @@ struct SidebarView: View {
                         ForEach(repository.stashes, id: \.self) { stash in
                             SidebarItem(
                                 title: stash.message,
-                                icon: "archivebox",
+                                icon: .system("archivebox"),
                                 subtitle: stash.shortName
                             )
                             .tag(SidebarSelection.stash(stash))
@@ -233,7 +233,7 @@ struct SidebarView: View {
                         ForEach(repository.submodules, id: \.self) { submodule in
                             SidebarItem(
                                 title: submodule.name,
-                                icon: "folder.badge.gearshape"
+                                icon: .system("folder.badge.gearshape")
                             )
                             .tag(SidebarSelection.submodule(submodule))
                         }
@@ -413,7 +413,9 @@ struct SectionHeader: View {
                 Image(systemName: isExpanded ? "chevron.down" : "chevron.right")
                     .font(.caption2)
                     .foregroundColor(.secondary)
+                    .padding(.horizontal, 10)
             }
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .pointingHandCursor()
@@ -422,7 +424,7 @@ struct SectionHeader: View {
 
 struct SidebarItem: View {
     let title: String
-    let icon: String
+    let icon: ImageSource
     var badge: Int? = nil
     var isCurrent: Bool = false
     var isSelected: Bool = false
@@ -430,7 +432,7 @@ struct SidebarItem: View {
     
     var body: some View {
         HStack {
-            Image(systemName: icon)
+            Image(icon)
                 .foregroundColor(isCurrent ? .accentColor : .secondary)
                 .frame(width: 20)
             
