@@ -29,7 +29,6 @@
 		020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 200 /* Assets.xcassets */; };
 		021 /* GitDirectoryWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 120 /* GitDirectoryWatcher.swift */; };
 		022 /* View+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 121 /* View+Extensions.swift */; };
-		A59D4FBB2F4B70E2009DBEF1 /* LLM in Frameworks */ = {isa = PBXBuildFile; productRef = CE63AAE17E0CF47A90A8516C /* LLM */; };
 		A85E1FB5577507F2B2DB6F79 /* LocalLLMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 043948729140AEB1264630F0 /* LocalLLMService.swift */; };
 		E683A7EE1ACC5ADDA2C9F1B3 /* TreeEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42EF712F30B5056EC712D606 /* TreeEntry.swift */; };
 /* End PBXBuildFile section */
@@ -68,7 +67,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A59D4FBB2F4B70E2009DBEF1 /* LLM in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
