@@ -18,6 +18,13 @@ enum SidebarSelection: Hashable {
     case submodule(GitSubmodule)
 }
 
+private enum Action: Hashable {
+    case push
+    case pull
+    case fetch
+    case refresh
+}
+
 struct MainRepositoryView: View {
     @ObservedObject var repository: GitRepository
     @State private var selection: SidebarSelection = .stage
@@ -29,7 +36,7 @@ struct MainRepositoryView: View {
     @State private var isToastError: Bool = false
     
     // Action loading states
-    @State private var loadingActions: Set<String> = []
+    @State private var loadingActions: Set<Action> = []
     
     var body: some View {
         NavigationSplitView(columnVisibility: $columnVisibility) {
@@ -84,36 +91,36 @@ struct MainRepositoryView: View {
     
     @ViewBuilder
     private var toolbarContent: some View {
-        toolbarButton(name: "Fetch", title: "Fetch", systemImage: "arrow.down", help: "Fetch from remote") {
+        toolbarButton(action: .fetch, title: "Fetch", systemImage: "arrow.down", help: "Fetch from remote") {
             try await repository.fetch()
         }
         
-        toolbarButton(name: "Pull", title: "Pull", systemImage: "arrow.down.circle", help: "Pull from remote") {
+        toolbarButton(action: .pull, title: "Pull", systemImage: "arrow.down.circle", help: "Pull from remote") {
             try await repository.pull()
         }
                 
-        toolbarButton(name: "Push", title: "Push", systemImage: "arrow.up.circle", help: "Push to remote") {
+        toolbarButton(action: .push, title: "Push", systemImage: "arrow.up.circle", help: "Push to remote") {
             try await repository.push()
         }
         
         Divider()
         
-        toolbarButton(name: "Refresh", title: "Refresh", systemImage: "arrow.clockwise", help: "Refresh repository") {
+        toolbarButton(action: .refresh, title: "Refresh", systemImage: "arrow.clockwise", help: "Refresh repository") {
             performRefresh()
         }
     }
     
     private func toolbarButton(
-        name: String,
+        action: Action,
         title: String,
         systemImage: String,
         help: String,
-        action: @escaping () async throws -> Void
+        perform: @escaping () async throws -> Void
     ) -> some View {
         Button {
-            performAction(name: name, action: action)
+            performAction(action: action, block: perform)
         } label: {
-            if loadingActions.contains(name) {
+            if loadingActions.contains(action) {
                 ProgressView()
                     .controlSize(.small)
                     .frame(width: 16, height: 16)
@@ -122,38 +129,38 @@ struct MainRepositoryView: View {
             }
         }
         .help(help)
-        .disabled(loadingActions.contains(name))
+        .disabled(loadingActions.contains(action))
         .pointingHandCursor()
     }
     
-    private func performAction(name: String, action: @escaping () async throws -> Void) {
-        guard !loadingActions.contains(name) else { return }
+    private func performAction(action: Action, block: @escaping () async throws -> Void) {
+        guard !loadingActions.contains(action) else { return }
         
         withAnimation {
-            _ = loadingActions.insert(name)
+            _ = loadingActions.insert(action)
         }
         
         Task {
             do {
-                try await action()
+                try await block()
                 withAnimation {
-                    _ = loadingActions.remove(name)
+                    _ = loadingActions.remove(action)
                 }
-                showToast("\(name) completed successfully")
+                showToast("\(action) completed successfully")
             } catch {
                 withAnimation {
-                    _ = loadingActions.remove(name)
+                    _ = loadingActions.remove(action)
                 }
-                showToast("\(name) failed: \(error.localizedDescription)", isError: true)
+                showToast("\(action) failed: \(error.localizedDescription)", isError: true)
             }
         }
     }
     
     private func performRefresh() {
-        guard !loadingActions.contains("Refresh") else { return }
+        guard !loadingActions.contains(.refresh) else { return }
         
         withAnimation {
-            _ = loadingActions.insert("Refresh")
+            _ = loadingActions.insert(.refresh)
         }
         
         Task {
@@ -182,7 +189,7 @@ struct MainRepositoryView: View {
             }
             
             withAnimation {
-                _ = loadingActions.remove("Refresh")
+                _ = loadingActions.remove(.refresh)
             }
             
             // Show appropriate toast message based on selection
