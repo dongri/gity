@@ -90,7 +90,7 @@ struct DiffContentView: View {
         .onAppear {
             parseContent()
         }
-        .onChange(of: content) { _ in
+        .onChange(of: content) { _, _ in
             parseContent()
         }
     }
