@@ -12,10 +12,16 @@ import Cocoa
 struct GitYApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
+    @StateObject private var appState = AppState()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .frame(minWidth: 900, minHeight: 600)
+                .environmentObject(appState)
+                .task {
+                    appState.setup()
+                }
         }
         .commands {
             CommandGroup(replacing: .newItem) {

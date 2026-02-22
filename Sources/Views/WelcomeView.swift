@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct WelcomeView: View {
-    @StateObject private var appState = AppState.shared
+    @EnvironmentObject var appState: AppState
     
     var body: some View {
         VStack(spacing: 30) {

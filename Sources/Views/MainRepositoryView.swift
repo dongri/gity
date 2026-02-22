@@ -19,6 +19,8 @@ enum SidebarSelection: Hashable {
 }
 
 struct MainRepositoryView: View {
+    @EnvironmentObject var appState: AppState
+    
     @ObservedObject var repository: GitRepository
     @State private var selection: SidebarSelection = .stage
     @State private var columnVisibility: NavigationSplitViewVisibility = .all
@@ -79,6 +81,9 @@ struct MainRepositoryView: View {
                 .id(toastMessage) // Force recreate on message change
                 .zIndex(100)
             }
+        }
+        .task {
+            appState.addRecentRepository(repository.url)
         }
     }
     
