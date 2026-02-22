@@ -60,7 +60,8 @@ struct SidebarView: View {
                         ForEach(repository.branches, id: \.self) { branch in
                             SidebarItem(
                                 title: branch.name,
-                                icon: .system("arrow.triangle.branch"),
+//                                icon: .system("arrow.triangle.branch"),
+                                icon: .local("git.branch"),
                                 isCurrent: branch.name == repository.currentBranch?.name
                             )
                             .tag(SidebarSelection.branch(branch))
@@ -433,8 +434,9 @@ struct SidebarItem: View {
     var body: some View {
         HStack {
             Image(icon)
+                .resizable()
                 .foregroundColor(isCurrent ? .accentColor : .secondary)
-                .frame(width: 20)
+                .frame(width: 20, height: 20)
             
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
