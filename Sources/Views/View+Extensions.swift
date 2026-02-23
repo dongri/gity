@@ -26,3 +26,14 @@ class CursorView: NSView {
         addCursorRect(bounds, cursor: .pointingHand)
     }
 }
+
+extension View {
+    @ViewBuilder
+    func `ifLet`<T, Content: View>(option: T?, transform: (Self, T) -> Content) -> some View {
+        if let option {
+            transform(self, option)
+        } else {
+            self
+        }
+    }    
+}

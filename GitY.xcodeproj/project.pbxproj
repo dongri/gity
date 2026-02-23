@@ -29,8 +29,11 @@
 		020 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 200 /* Assets.xcassets */; };
 		021 /* GitDirectoryWatcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 120 /* GitDirectoryWatcher.swift */; };
 		022 /* View+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 121 /* View+Extensions.swift */; };
+		A50EFDD42F4C77F700112F01 /* RecentRepositoryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50EFDD32F4C77F700112F01 /* RecentRepositoryRow.swift */; };
+		A50EFDD62F4C782C00112F01 /* RecentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50EFDD52F4C782C00112F01 /* RecentView.swift */; };
 		A59D4FC42F4B8E22009DBEF1 /* LLM in Frameworks */ = {isa = PBXBuildFile; productRef = CE63AAE17E0CF47A90A8516C /* LLM */; };
 		A59D4FC62F4B9AEA009DBEF1 /* ImageSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59D4FC52F4B9AEA009DBEF1 /* ImageSource.swift */; };
+		A5EF6BD22F4C67AB00E65923 /* KeyboardShortcutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5EF6BD12F4C67AB00E65923 /* KeyboardShortcutView.swift */; };
 		A85E1FB5577507F2B2DB6F79 /* LocalLLMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 043948729140AEB1264630F0 /* LocalLLMService.swift */; };
 		E683A7EE1ACC5ADDA2C9F1B3 /* TreeEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42EF712F30B5056EC712D606 /* TreeEntry.swift */; };
 /* End PBXBuildFile section */
@@ -62,7 +65,10 @@
 		200 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		201 /* GitY.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GitY.entitlements; sourceTree = "<group>"; };
 		42EF712F30B5056EC712D606 /* TreeEntry.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TreeEntry.swift; sourceTree = "<group>"; };
+		A50EFDD32F4C77F700112F01 /* RecentRepositoryRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentRepositoryRow.swift; sourceTree = "<group>"; };
+		A50EFDD52F4C782C00112F01 /* RecentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentView.swift; sourceTree = "<group>"; };
 		A59D4FC52F4B9AEA009DBEF1 /* ImageSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSource.swift; sourceTree = "<group>"; };
+		A5EF6BD12F4C67AB00E65923 /* KeyboardShortcutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -115,6 +121,8 @@
 		502 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				A5EF6BCD2F4C671100E65923 /* Common */,
+				A50EFDD22F4C77C400112F01 /* Recent */,
 				102 /* ContentView.swift */,
 				103 /* WelcomeView.swift */,
 				104 /* MainRepositoryView.swift */,
@@ -164,6 +172,23 @@
 				100 /* GitY.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A50EFDD22F4C77C400112F01 /* Recent */ = {
+			isa = PBXGroup;
+			children = (
+				A50EFDD32F4C77F700112F01 /* RecentRepositoryRow.swift */,
+				A50EFDD52F4C782C00112F01 /* RecentView.swift */,
+			);
+			path = Recent;
+			sourceTree = "<group>";
+		};
+		A5EF6BCD2F4C671100E65923 /* Common */ = {
+			isa = PBXGroup;
+			children = (
+				A5EF6BD12F4C67AB00E65923 /* KeyboardShortcutView.swift */,
+			);
+			path = Common;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -242,11 +267,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				A59D4FC62F4B9AEA009DBEF1 /* ImageSource.swift in Sources */,
+				A5EF6BD22F4C67AB00E65923 /* KeyboardShortcutView.swift in Sources */,
 				001 /* GitYApp.swift in Sources */,
 				002 /* ContentView.swift in Sources */,
 				003 /* WelcomeView.swift in Sources */,
 				004 /* MainRepositoryView.swift in Sources */,
 				005 /* SidebarView.swift in Sources */,
+				A50EFDD62F4C782C00112F01 /* RecentView.swift in Sources */,
 				006 /* StageView.swift in Sources */,
 				007 /* HistoryView.swift in Sources */,
 				008 /* DiffView.swift in Sources */,
@@ -265,6 +292,7 @@
 				022 /* View+Extensions.swift in Sources */,
 				E683A7EE1ACC5ADDA2C9F1B3 /* TreeEntry.swift in Sources */,
 				A85E1FB5577507F2B2DB6F79 /* LocalLLMService.swift in Sources */,
+				A50EFDD42F4C77F700112F01 /* RecentRepositoryRow.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
