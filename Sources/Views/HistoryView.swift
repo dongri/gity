@@ -143,7 +143,7 @@ struct HistoryView: View {
             }
             .frame(minHeight: 150, idealHeight: 250)
         }
-        .onChange(of: branchFilter) { newFilter in
+        .onChange(of: branchFilter) { _, newFilter in
             repository.currentBranchFilter = newFilter
             // Only reload if we have a valid selection or filter is not .selected
             // This avoids double-loading when selection changes
@@ -153,7 +153,7 @@ struct HistoryView: View {
                 }
             }
         }
-        .onChange(of: selection) { newSelection in
+        .onChange(of: selection) { _, newSelection in
             // Extract ref from the new selection directly
             let newRef: GitRef?
             switch newSelection {
@@ -172,7 +172,7 @@ struct HistoryView: View {
                 await repository.loadCommitsForRef(newRef, filter: .selected)
             }
         }
-        .onChange(of: selectedCommit) { _ in
+        .onChange(of: selectedCommit) { _, _ in
             loadDiffForSelectedCommit()
         }
         .onAppear {
@@ -554,10 +554,10 @@ struct CommitTreeView: View {
         .onAppear {
             loadTree()
         }
-        .onChange(of: commit.sha) { _ in
+        .onChange(of: commit.sha) { _, _ in
             loadTree()
         }
-        .onChange(of: selectedFile) { newFile in
+        .onChange(of: selectedFile) { _, newFile in
             if let file = newFile {
                 loadFileContent(file)
             }
@@ -820,7 +820,7 @@ struct FileContentView: View {
             .onAppear {
                 parseContent()
             }
-            .onChange(of: content) { _ in
+            .onChange(of: content) { _, _ in
                 parseContent()
             }
         }

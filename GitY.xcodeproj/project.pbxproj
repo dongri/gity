@@ -92,7 +92,6 @@
 				101 /* GitYApp.swift */,
 				501 /* Models */,
 				502 /* Views */,
-				503 /* Controllers */,
 				504 /* Services */,
 				505 /* Utils */,
 			);
@@ -129,13 +128,6 @@
 				121 /* View+Extensions.swift */,
 			);
 			path = Views;
-			sourceTree = "<group>";
-		};
-		503 /* Controllers */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Controllers;
 			sourceTree = "<group>";
 		};
 		504 /* Services */ = {
