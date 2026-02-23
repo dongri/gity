@@ -113,6 +113,7 @@ struct MainRepositoryView: View {
         toolbarButton(action: .refresh, title: "Refresh", systemImage: "arrow.clockwise", help: "Refresh repository") {
             performRefresh()
         }
+        .keyboardShortcut("r", modifiers: .command)
     }
     
     private func toolbarButton(

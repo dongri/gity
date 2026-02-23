@@ -19,6 +19,7 @@ struct HistoryView: View {
     @State private var detailViewMode: DetailViewMode = .diff
     @State private var isLoadingDiff: Bool = false
     @State private var diffLoadTask: Task<Void, Never>?
+    @AppStorage("historyTopPanelRatio") private var topPanelRatio: Double = 0.5
     
     enum SearchMode: String, CaseIterable {
         case subject = "Subject"
@@ -66,82 +67,112 @@ struct HistoryView: View {
     
 
     var body: some View {
-        VSplitView {
-            // Commit list - takes majority of space
-            VStack(spacing: 0) {
-                // Toolbar
-                HStack(spacing: 8) {
-                    // Branch filter pills
-                    Picker("", selection: $branchFilter) {
-                        Text("All").tag(BranchFilterType.all)
-                        Text("Local").tag(BranchFilterType.localRemote)
-                        Text(truncatedFilterLabel).tag(BranchFilterType.selected)
-                    }
-                    .pickerStyle(.segmented)
-                    .fixedSize()
-                    .pointingHandCursor()
-                    
-                    Spacer()
-                    
-                    // Search
-                    Picker("", selection: $searchMode) {
-                        ForEach(SearchMode.allCases, id: \.self) { mode in
-                            Text(mode.rawValue).tag(mode)
-                        }
-                    }
-                    .frame(width: 80)
-                    .pointingHandCursor()
-                    
-                    TextField("🔍 Subject, Author, SHA", text: $searchText)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 200)
-                }
-                .padding(8)
-                .background(Color(nsColor: .controlBackgroundColor))
-                
-                // Commit table
-                CommitTableView(
-                    commits: filteredCommits,
-                    selectedCommit: $selectedCommit,
-                    hasMoreCommits: !repository.isInitializing && repository.hasMoreCommits,
-                    isLoadingMore: repository.isLoadingMoreCommits,
-                    onLoadMore: {
-                        Task {
-                            await repository.loadMoreCommitsForRef(selectedGitRef, filter: branchFilter)
-                        }
-                    }
-                )
-            }
-            .frame(minHeight: 150, idealHeight: 300)
+        GeometryReader { geometry in
+            let dividerHeight: CGFloat = 8
+            let minPanelHeight: CGFloat = 50
+            let availableHeight = geometry.size.height - dividerHeight
+            let topHeight = max(minPanelHeight, min(availableHeight - minPanelHeight, availableHeight * topPanelRatio))
+            let bottomHeight = max(minPanelHeight, availableHeight - topHeight)
             
-            // Commit detail view
-            Group {
-                if let commit = selectedCommit {
-                    CommitDetailView(
-                        repository: repository,
-                        commit: commit,
-                        diffContent: diffContent,
-                        isLoadingDiff: isLoadingDiff,
-                        viewMode: $detailViewMode
+            VStack(spacing: 0) {
+                // Commit list - top panel
+                VStack(spacing: 0) {
+                    // Toolbar
+                    HStack(spacing: 8) {
+                        // Branch filter pills
+                        Picker("", selection: $branchFilter) {
+                            Text("All").tag(BranchFilterType.all)
+                            Text("Local").tag(BranchFilterType.localRemote)
+                            Text(truncatedFilterLabel).tag(BranchFilterType.selected)
+                        }
+                        .pickerStyle(.segmented)
+                        .fixedSize()
+                        .pointingHandCursor()
+                        
+                        Spacer()
+                        
+                        // Search
+                        Picker("", selection: $searchMode) {
+                            ForEach(SearchMode.allCases, id: \.self) { mode in
+                                Text(mode.rawValue).tag(mode)
+                            }
+                        }
+                        .frame(width: 80)
+                        .pointingHandCursor()
+                        
+                        TextField("🔍 Subject, Author, SHA", text: $searchText)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 200)
+                    }
+                    .padding(8)
+                    .background(Color(nsColor: .controlBackgroundColor))
+                    
+                    // Commit table
+                    CommitTableView(
+                        commits: filteredCommits,
+                        selectedCommit: $selectedCommit,
+                        hasMoreCommits: !repository.isInitializing && repository.hasMoreCommits,
+                        isLoadingMore: repository.isLoadingMoreCommits,
+                        onLoadMore: {
+                            Task {
+                                await repository.loadMoreCommitsForRef(selectedGitRef, filter: branchFilter)
+                            }
+                        }
                     )
-                } else {
-                    VStack {
-                        Spacer()
-                        Text("No file selected")
-                            .font(.title2)
-                            .foregroundColor(.secondary)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.accentColor.opacity(0.1))
-                            )
-                            .padding(.horizontal, 40)
-                        Spacer()
+                }
+                .frame(height: topHeight)
+                
+                // Draggable divider
+                Rectangle()
+                    .fill(Color(nsColor: .separatorColor))
+                    .frame(height: dividerHeight)
+                    .contentShape(Rectangle())
+                    .gesture(
+                        DragGesture()
+                            .onChanged { value in
+                                let newTopHeight = topHeight + value.translation.height
+                                let newRatio = newTopHeight / availableHeight
+                                let clampedRatio = max(minPanelHeight / availableHeight, min(1.0 - minPanelHeight / availableHeight, newRatio))
+                                topPanelRatio = clampedRatio
+                            }
+                    )
+                    .onHover { hovering in
+                        if hovering {
+                            NSCursor.resizeUpDown.push()
+                        } else {
+                            NSCursor.pop()
+                        }
+                    }
+                
+                // Commit detail view - bottom panel
+                Group {
+                    if let commit = selectedCommit {
+                        CommitDetailView(
+                            repository: repository,
+                            commit: commit,
+                            diffContent: diffContent,
+                            isLoadingDiff: isLoadingDiff,
+                            viewMode: $detailViewMode
+                        )
+                    } else {
+                        VStack {
+                            Spacer()
+                            Text("No file selected")
+                                .font(.title2)
+                                .foregroundColor(.secondary)
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.accentColor.opacity(0.1))
+                                )
+                                .padding(.horizontal, 40)
+                            Spacer()
+                        }
                     }
                 }
+                .frame(height: bottomHeight)
             }
-            .frame(minHeight: 150, idealHeight: 250)
         }
         .onChange(of: branchFilter) { _, newFilter in
             repository.currentBranchFilter = newFilter
