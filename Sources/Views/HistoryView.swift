@@ -148,9 +148,7 @@ struct HistoryView: View {
             // Only reload if we have a valid selection or filter is not .selected
             // This avoids double-loading when selection changes
             if newFilter != .selected || selectedGitRef != nil {
-                Task {
-                    await repository.loadCommitsForRef(selectedGitRef, filter: newFilter)
-                }
+                loadCommitsForRef(selectedGitRef, filter: newFilter)
             }
         }
         .onChange(of: selection) { _, newSelection in
@@ -168,9 +166,7 @@ struct HistoryView: View {
             }
             
             // Load commits for the selected ref
-            Task {
-                await repository.loadCommitsForRef(newRef, filter: .selected)
-            }
+            loadCommitsForRef(newRef, filter: .selected)
         }
         .onChange(of: selectedCommit) { _, _ in
             loadDiffForSelectedCommit()
@@ -183,9 +179,7 @@ struct HistoryView: View {
             default:
                 break
             }
-            Task {
-                await repository.loadCommitsForRef(selectedGitRef, filter: branchFilter)
-            }
+            loadCommitsForRef(selectedGitRef, filter: branchFilter)
         }
         .toolbar {
             ToolbarItem(placement: .status) {
@@ -196,8 +190,14 @@ struct HistoryView: View {
             }
         }
     }
-    
     // MARK: - Helper Functions
+    
+    func loadCommitsForRef(_ ref: GitRef?, filter: BranchFilterType) {
+        Task {
+            await repository.loadCommitsForRef(ref, filter: filter)
+            selectedCommit = filteredCommits.first
+        }
+    }
     
     private func loadDiffForSelectedCommit() {
         // Cancel any previous diff loading task
