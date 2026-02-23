@@ -36,19 +36,8 @@ struct WelcomeView: View {
             
             Spacer()
             
-            // Recent Repositories
-            if !appState.recentRepositories.isEmpty {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Recent Repositories")
-                        .font(.headline)
-                        .foregroundColor(.secondary)
-                    
-                    ForEach(appState.recentRepositories.prefix(5), id: \.self) { url in
-                        RecentRepositoryRow(url: url)
-                    }
-                }
+            RecentView()
                 .frame(maxWidth: 400)
-            }
             
             Spacer()
         }
@@ -89,41 +78,6 @@ struct ActionButton: View {
             .frame(width: 160, height: 100)
         }
         .buttonStyle(.bordered)
-        .pointingHandCursor()
-    }
-}
-
-struct RecentRepositoryRow: View {
-    let url: URL
-    
-    var body: some View {
-        Button {
-            NotificationCenter.default.post(name: .openRepositoryURL, object: url)
-        } label: {
-            HStack {
-                Image(systemName: "folder.fill")
-                    .foregroundColor(.accentColor)
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(url.lastPathComponent)
-                        .font(.system(.body, design: .monospaced))
-                    Text(url.deletingLastPathComponent().path)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .lineLimit(1)
-                }
-                
-                Spacer()
-                
-                Image(systemName: "chevron.right")
-                    .foregroundColor(.secondary)
-            }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 12)
-            .background(Color(nsColor: .controlBackgroundColor))
-            .cornerRadius(8)
-        }
-        .buttonStyle(.plain)
         .pointingHandCursor()
     }
 }

@@ -43,6 +43,7 @@ struct ContentView: View {
     private func openRepository(at url: URL) {
         do {
             let repository = try GitRepository(url: url)
+            appState.addRecentRepository(url)
             appState.currentRepository = repository
             Task {
                 await repository.loadCommits()
@@ -82,5 +83,9 @@ class AppState: ObservableObject {
         if let data = try? JSONEncoder().encode(recentRepositories) {
             UserDefaults.standard.set(data, forKey: "recentRepositories")
         }
+    }
+    
+    func clearRecentRepositories() {
+        recentRepositories.removeAll()
     }
 }
