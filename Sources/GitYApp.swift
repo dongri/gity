@@ -60,9 +60,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls {
             if url.hasDirectoryPath {
-                NotificationCenter.default.post(name: .openRepositoryURL, object: url)
+                // Traverse up to find the nearest .git directory
+                let repoURL = findGitRoot(from: url) ?? url
+                NotificationCenter.default.post(name: .openRepositoryURL, object: repoURL)
             }
         }
+    }
+    
+    /// Walk up from the given directory to find the nearest parent containing `.git`
+    private func findGitRoot(from url: URL) -> URL? {
+        var current = url.standardizedFileURL
+        let fileManager = FileManager.default
+        while current.path != "/" {
+            let gitDir = current.appendingPathComponent(".git")
+            if fileManager.fileExists(atPath: gitDir.path) {
+                return current
+            }
+            current = current.deletingLastPathComponent()
+        }
+        return nil
     }
 }
 

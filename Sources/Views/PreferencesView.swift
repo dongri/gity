@@ -467,9 +467,19 @@ struct CLIInstaller {
             exit 1
         fi
         
-        # Check if it's a git repository
+        # Traverse up to find .git directory
+        SEARCH_PATH="$REPO_PATH"
+        while [ "$SEARCH_PATH" != "/" ]; do
+            if [ -d "$SEARCH_PATH/.git" ]; then
+                REPO_PATH="$SEARCH_PATH"
+                break
+            fi
+            SEARCH_PATH="$(dirname "$SEARCH_PATH")"
+        done
+        
         if [ ! -d "$REPO_PATH/.git" ]; then
-            echo "Warning: $REPO_PATH is not a git repository"
+            echo "Error: Not a git repository (or any parent up to /)"
+            exit 1
         fi
         
         # Open GitY with the repository path
