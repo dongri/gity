@@ -115,7 +115,7 @@ class GitRepository: ObservableObject {
         // Load commits after UI is responsive
         await loadCommits()
         
-        // Start watching .git/HEAD for branch changes (e.g., from terminal)
+        // Start watching .git/HEAD for branch changes (e.g., from terminal) & repo files
         startFileSystemWatcher()
         
         // Load secondary data in background (stashes, submodules)
