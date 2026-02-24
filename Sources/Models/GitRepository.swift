@@ -919,10 +919,11 @@ class GitRepository: ObservableObject {
             .map { str -> String in
                 var tmp = str
                 tmp.trimPrefix(path)
-                return tmp
+                return "/" + tmp
             }
             .sink { [weak self] str in
-                if str.hasPrefix(".git/") {
+                // cover the case where nested .git folders
+                if str.contains("/.git/") {
                     self?.gitUpdatesPublisher.send(str)
                 } else {
                     self?.repoUpdatesPublisher.send()
