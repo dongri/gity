@@ -919,11 +919,11 @@ class GitRepository: ObservableObject {
             .map { str -> String in
                 var tmp = str
                 tmp.trimPrefix(path)
-                return "/" + tmp
+                return tmp
             }
             .sink { [weak self] str in
                 // cover the case where nested .git folders
-                if str.contains("/.git/") {
+                if str.starts(with: ".git/") || str.contains("/.git/") {
                     self?.gitUpdatesPublisher.send(str)
                 } else {
                     self?.repoUpdatesPublisher.send()
@@ -935,14 +935,14 @@ class GitRepository: ObservableObject {
             .filter {
                 ["HEAD", "refs/heads", "refs/tags"].contains($0)
             }
-            .debounce(for: .seconds(0.3), scheduler: DispatchQueue.global(qos: .background))
+            .debounce(for: .seconds(0.3), scheduler: RunLoop.main)
             .sink { [weak self] _ in
                 Task { await self?.refreshBranchOnHeadChange() }
             }
             .store(in: &cancellables)
         
         repoUpdatesPublisher
-            .debounce(for: .seconds(1.0), scheduler: DispatchQueue.global(qos: .background))
+            .debounce(for: .seconds(1.0), scheduler: RunLoop.main)
             .sink { [weak self] in
                 Task { await self?.refreshRefsAndIndices() }
             }
