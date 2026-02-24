@@ -105,11 +105,3 @@ struct FileSystemEventInfo {
         pathList.isEmpty
     }
 }
-
-class RefCell<T> {
-    let value: T
-    
-    init(_ value: T) {
-        self.value = value
-    }
-}
