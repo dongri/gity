@@ -41,8 +41,9 @@ class GitRepository: ObservableObject {
     @Published var stagedFiles: [ChangedFile] = []
     @Published var unstagedFiles: [ChangedFile] = []
     
-    private var fileWatcher: DirectoryWatcher?
-    private var gitDirWatcher: GitDirectoryWatcher?
+    private var fileWatcher = DirectoryWatcher()
+    private let gitUpdatesPublisher = PassthroughSubject<String, Never>()
+    private let repoUpdatesPublisher = PassthroughSubject<(), Never>()
     private var cancellables = Set<AnyCancellable>()
     
     // Limits for performance
@@ -107,13 +108,7 @@ class GitRepository: ObservableObject {
         // Detect default branch (main or master)
         await detectDefaultBranch()
         
-        // Then load other data in parallel, but don't block
-        async let refsTask: () = loadRefsInBackground()
-        async let indexTask: () = reloadIndexAsync()
-        
-        // Wait for essential tasks
-        await refsTask
-        await indexTask
+        await refreshRefsAndIndices()
         
         isInitializing = false
         
@@ -121,13 +116,23 @@ class GitRepository: ObservableObject {
         await loadCommits()
         
         // Start watching .git/HEAD for branch changes (e.g., from terminal)
-        startHeadWatcher()
+        startFileSystemWatcher()
         
         // Load secondary data in background (stashes, submodules)
         Task {
             await reloadStashesAsync()
             await reloadSubmodulesAsync()
         }
+    }
+    
+    private func refreshRefsAndIndices() async {
+        // Then load other data in parallel, but don't block
+        async let refsTask: () = loadRefsInBackground()
+        async let indexTask: () = reloadIndexAsync()
+        
+        // Wait for essential tasks
+        await refsTask
+        await indexTask
     }
     
     @MainActor
@@ -904,23 +909,46 @@ class GitRepository: ObservableObject {
         return runGitSync(arguments)
     }
     
-    // MARK: - HEAD File Watching (for terminal branch changes)
+    // MARK: - File Watching
     
-    private var headWatcherDebounceTask: Task<Void, Never>?
-    
-    private func startHeadWatcher() {
-        // Use FSEvents-based watcher for reliable detection of git operations from terminal
-        gitDirWatcher = GitDirectoryWatcher(gitDirectory: gitDirectory) { [weak self] in
-            // Debounce: cancel previous task and wait a moment before refreshing
-            self?.headWatcherDebounceTask?.cancel()
-            self?.headWatcherDebounceTask = Task { @MainActor [weak self] in
-                do {
-                    try await Task.sleep(nanoseconds: 300_000_000) // 0.3 seconds
-                    await self?.refreshBranchOnHeadChange()
-                } catch {
-                    // Task was cancelled, ignore
+    private func startFileSystemWatcher() {
+        let path = url.path
+        fileWatcher
+            .publisher
+            .flatMap { $0.pathList.publisher }
+            .map { str -> String in
+                var tmp = str
+                tmp.trimPrefix(path)
+                return tmp
+            }
+            .sink { [weak self] str in
+                if str.hasPrefix(".git/") {
+                    self?.gitUpdatesPublisher.send(str)
+                } else {
+                    self?.repoUpdatesPublisher.send()
                 }
             }
+            .store(in: &cancellables)
+        
+        gitUpdatesPublisher
+            .filter {
+                ["HEAD", "refs/heads", "refs/tags"].contains($0)
+            }
+            .debounce(for: .seconds(0.3), scheduler: DispatchQueue.global(qos: .background))
+            .sink { [weak self] _ in
+                Task { await self?.refreshBranchOnHeadChange() }
+            }
+            .store(in: &cancellables)
+        
+        repoUpdatesPublisher
+            .debounce(for: .seconds(1.0), scheduler: DispatchQueue.global(qos: .background))
+            .sink { [weak self] in
+                Task { await self?.refreshRefsAndIndices() }
+            }
+            .store(in: &cancellables)
+        
+        if !fileWatcher.start(path) {
+            print("Failed to start filesystem watcher")
         }
     }
     
