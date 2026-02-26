@@ -1,5 +1,5 @@
 //
-//  DismissWindowView.swift
+//  DismissWindowButton.swift
 //  GitY
 //
 //  Created by Sergey on 26.02.2026.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct DismissWindowView: View {
+struct DismissWindowButton: View {
     @State private var isHoveringCloseButton = false
     let action: () -> Void
     

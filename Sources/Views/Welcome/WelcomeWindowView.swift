@@ -42,7 +42,7 @@ struct WelcomeWindowView: View {
                     }
             }
             
-            DismissWindowView {
+            DismissWindowButton {
                 Darwin.exit(0)
             }
         }

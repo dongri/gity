@@ -22,7 +22,7 @@ struct GitYApp: App {
     
     var body: some Scene {
         Group {
-//            WelcomeWindow()
+            WelcomeWindow()
             
             WindowGroup {
                 ContentView()

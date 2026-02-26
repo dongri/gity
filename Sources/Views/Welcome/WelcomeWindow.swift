@@ -22,8 +22,6 @@ struct WelcomeWindow: Scene {
                         window.standardWindowButton(.miniaturizeButton)?.isHidden = true
                         window.standardWindowButton(.zoomButton)?.isHidden = true
                         window.isMovableByWindowBackground = true
-                        
-                        // Ensure the title bar is physically hidden/transparent
                         window.titlebarAppearsTransparent = true
                     }
                 }
