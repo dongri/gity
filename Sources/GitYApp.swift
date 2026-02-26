@@ -10,9 +10,17 @@ import Cocoa
 
 @main
 struct GitYApp: App {
+    enum Window: String {
+        case welcome = "w_id.welcome"
+        case repository = "w_id.repository"
+    }
+    
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
     @StateObject private var appState: AppState
+    
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
     
     init() {
         let appState = AppState()
@@ -22,33 +30,75 @@ struct GitYApp: App {
     
     var body: some Scene {
         Group {
-            WelcomeWindow()
-            
-            WindowGroup {
-                ContentView()
-                    .frame(minWidth: 900, minHeight: 600)
-                    .environmentObject(appState)
+            Group {
+                WelcomeWindow(
+                    id: Window.welcome.rawValue
+                )
+                
+                MainRepositoryWindow(
+                    id: Window.repository.rawValue
+                )
             }
+            .environmentObject(appState)
             .commands {
                 CommandGroup(replacing: .newItem) {
-                    Button("Open Repository...") {
-                        NotificationCenter.default.post(name: .openRepository, object: nil)
-                    }
-                    .keyboardShortcut("O", modifiers: .command)
+                    Button("Open Repository...", action: selectRepository)
+                        .keyboardShortcut("O", modifiers: .command)
                 }
-                
                 CommandGroup(after: .newItem) {
-                    Button("Clone Repository...") {
-                        NotificationCenter.default.post(name: .cloneRepository, object: nil)
-                    }
-                    .keyboardShortcut("C", modifiers: [.command, .shift])
+                    Button("Clone Repository...", action: cloneRepository)
+                        .keyboardShortcut("C", modifiers: [.command, .shift])
                 }
             }
             
             Settings {
                 PreferencesView()
             }
-        }.environmentObject(appState)
+        }
+    }
+    
+    private func selectRepository() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.message = "Select a Git repository"
+        
+        if panel.runModal() == .OK, let url = panel.url {
+            openRepository(at: url)
+        }
+    }
+    
+    private func openRepository(at url: URL) {
+        do {
+            let repository = try GitRepository(url: url)
+            appState.currentRepository = repository
+            openWindow(id: Window.repository.rawValue)
+            dismissWindow(id: Window.welcome.rawValue)
+            
+            Task {
+                await repository.loadCommits()
+            }
+        } catch {
+            let alert = NSAlert()
+            alert.messageText = "Failed to open repository"
+            alert.informativeText = error.localizedDescription
+            alert.alertStyle = .critical
+            alert.runModal()
+        }
+    }
+    
+    private func cloneRepository() {
+        let alert = NSAlert()
+        alert.messageText = "Sorry, clone repository isn't implemented yet"
+        alert.alertStyle = .informational
+        alert.runModal()
+    }
+    
+    private func closeRepository(_ url: URL) {
+        appState.currentRepository = nil
+        dismissWindow(id: Window.repository.rawValue)
+        openWindow(id: Window.welcome.rawValue)
     }
 }
 

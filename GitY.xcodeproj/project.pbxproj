@@ -40,6 +40,7 @@
 		A5977EEB2F50C8120027F68D /* NSApp+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EEA2F50C8120027F68D /* NSApp+Utils.swift */; };
 		A5977EED2F50C8530027F68D /* WelcomeActionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EEC2F50C8530027F68D /* WelcomeActionData.swift */; };
 		A5977EF02F50CBC10027F68D /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EEF2F50CBC10027F68D /* AppState.swift */; };
+		A5977EF22F50CDBC0027F68D /* MainRepositoryWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EF12F50CDBC0027F68D /* MainRepositoryWindow.swift */; };
 		A59D4FC42F4B8E22009DBEF1 /* LLM in Frameworks */ = {isa = PBXBuildFile; productRef = CE63AAE17E0CF47A90A8516C /* LLM */; };
 		A59D4FC62F4B9AEA009DBEF1 /* ImageSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59D4FC52F4B9AEA009DBEF1 /* ImageSource.swift */; };
 		A5EF6BD22F4C67AB00E65923 /* KeyboardShortcutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5EF6BD12F4C67AB00E65923 /* KeyboardShortcutView.swift */; };
@@ -85,6 +86,7 @@
 		A5977EEA2F50C8120027F68D /* NSApp+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSApp+Utils.swift"; sourceTree = "<group>"; };
 		A5977EEC2F50C8530027F68D /* WelcomeActionData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeActionData.swift; sourceTree = "<group>"; };
 		A5977EEF2F50CBC10027F68D /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		A5977EF12F50CDBC0027F68D /* MainRepositoryWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainRepositoryWindow.swift; sourceTree = "<group>"; };
 		A59D4FC52F4B9AEA009DBEF1 /* ImageSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSource.swift; sourceTree = "<group>"; };
 		A5EF6BD12F4C67AB00E65923 /* KeyboardShortcutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -213,6 +215,7 @@
 				108 /* DiffView.swift */,
 				109 /* StashDetailView.swift */,
 				110 /* SubmoduleDetailView.swift */,
+				A5977EF12F50CDBC0027F68D /* MainRepositoryWindow.swift */,
 			);
 			path = Repository;
 			sourceTree = "<group>";
@@ -316,6 +319,7 @@
 				008 /* DiffView.swift in Sources */,
 				009 /* StashDetailView.swift in Sources */,
 				010 /* SubmoduleDetailView.swift in Sources */,
+				A5977EF22F50CDBC0027F68D /* MainRepositoryWindow.swift in Sources */,
 				011 /* PreferencesView.swift in Sources */,
 				012 /* GitRepository.swift in Sources */,
 				013 /* GitRef.swift in Sources */,
