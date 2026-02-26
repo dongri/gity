@@ -137,19 +137,12 @@
 		502 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				A5977EEE2F50CB330027F68D /* Repository */,
 				A597786E2F506C630027F68D /* Welcome */,
 				A5EF6BCD2F4C671100E65923 /* Common */,
 				102 /* ContentView.swift */,
 				103 /* WelcomeView.swift */,
-				104 /* MainRepositoryView.swift */,
-				105 /* SidebarView.swift */,
-				106 /* StageView.swift */,
-				107 /* HistoryView.swift */,
-				108 /* DiffView.swift */,
-				109 /* StashDetailView.swift */,
-				110 /* SubmoduleDetailView.swift */,
 				111 /* PreferencesView.swift */,
-				121 /* View+Extensions.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -207,10 +200,25 @@
 			path = Welcome;
 			sourceTree = "<group>";
 		};
+		A5977EEE2F50CB330027F68D /* Repository */ = {
+			isa = PBXGroup;
+			children = (
+				104 /* MainRepositoryView.swift */,
+				105 /* SidebarView.swift */,
+				106 /* StageView.swift */,
+				107 /* HistoryView.swift */,
+				108 /* DiffView.swift */,
+				109 /* StashDetailView.swift */,
+				110 /* SubmoduleDetailView.swift */,
+			);
+			path = Repository;
+			sourceTree = "<group>";
+		};
 		A5EF6BCD2F4C671100E65923 /* Common */ = {
 			isa = PBXGroup;
 			children = (
 				A5EF6BD12F4C67AB00E65923 /* KeyboardShortcutView.swift */,
+				121 /* View+Extensions.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
