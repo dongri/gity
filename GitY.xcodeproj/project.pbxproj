@@ -31,6 +31,10 @@
 		A50EFDD42F4C77F700112F01 /* RecentRepositoryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50EFDD32F4C77F700112F01 /* RecentRepositoryRow.swift */; };
 		A50EFDD62F4C782C00112F01 /* RecentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A50EFDD52F4C782C00112F01 /* RecentView.swift */; };
 		A51E2B162F4DE1A100E83BE6 /* RefCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = A51E2B152F4DE1A100E83BE6 /* RefCell.swift */; };
+		A59778702F506CA40027F68D /* WelcomeWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A597786F2F506CA40027F68D /* WelcomeWindowView.swift */; };
+		A5977EE12F50981C0027F68D /* WelcomeWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EE02F50981C0027F68D /* WelcomeWindow.swift */; };
+		A5977EE32F50B2160027F68D /* WelcomeMainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EE22F50B2160027F68D /* WelcomeMainView.swift */; };
+		A5977EE52F50B23E0027F68D /* DismissWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EE42F50B23E0027F68D /* DismissWindowView.swift */; };
 		A59D4FC42F4B8E22009DBEF1 /* LLM in Frameworks */ = {isa = PBXBuildFile; productRef = CE63AAE17E0CF47A90A8516C /* LLM */; };
 		A59D4FC62F4B9AEA009DBEF1 /* ImageSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59D4FC52F4B9AEA009DBEF1 /* ImageSource.swift */; };
 		A5EF6BD22F4C67AB00E65923 /* KeyboardShortcutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5EF6BD12F4C67AB00E65923 /* KeyboardShortcutView.swift */; };
@@ -67,6 +71,10 @@
 		A50EFDD32F4C77F700112F01 /* RecentRepositoryRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentRepositoryRow.swift; sourceTree = "<group>"; };
 		A50EFDD52F4C782C00112F01 /* RecentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecentView.swift; sourceTree = "<group>"; };
 		A51E2B152F4DE1A100E83BE6 /* RefCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RefCell.swift; sourceTree = "<group>"; };
+		A597786F2F506CA40027F68D /* WelcomeWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeWindowView.swift; sourceTree = "<group>"; };
+		A5977EE02F50981C0027F68D /* WelcomeWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeWindow.swift; sourceTree = "<group>"; };
+		A5977EE22F50B2160027F68D /* WelcomeMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeMainView.swift; sourceTree = "<group>"; };
+		A5977EE42F50B23E0027F68D /* DismissWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DismissWindowView.swift; sourceTree = "<group>"; };
 		A59D4FC52F4B9AEA009DBEF1 /* ImageSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSource.swift; sourceTree = "<group>"; };
 		A5EF6BD12F4C67AB00E65923 /* KeyboardShortcutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -121,6 +129,7 @@
 		502 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				A597786E2F506C630027F68D /* Welcome */,
 				A5EF6BCD2F4C671100E65923 /* Common */,
 				A50EFDD22F4C77C400112F01 /* Recent */,
 				102 /* ContentView.swift */,
@@ -181,6 +190,17 @@
 				A50EFDD52F4C782C00112F01 /* RecentView.swift */,
 			);
 			path = Recent;
+			sourceTree = "<group>";
+		};
+		A597786E2F506C630027F68D /* Welcome */ = {
+			isa = PBXGroup;
+			children = (
+				A5977EE42F50B23E0027F68D /* DismissWindowView.swift */,
+				A5977EE22F50B2160027F68D /* WelcomeMainView.swift */,
+				A597786F2F506CA40027F68D /* WelcomeWindowView.swift */,
+				A5977EE02F50981C0027F68D /* WelcomeWindow.swift */,
+			);
+			path = Welcome;
 			sourceTree = "<group>";
 		};
 		A5EF6BCD2F4C671100E65923 /* Common */ = {
@@ -270,6 +290,7 @@
 				A5EF6BD22F4C67AB00E65923 /* KeyboardShortcutView.swift in Sources */,
 				001 /* GitYApp.swift in Sources */,
 				002 /* ContentView.swift in Sources */,
+				A59778702F506CA40027F68D /* WelcomeWindowView.swift in Sources */,
 				003 /* WelcomeView.swift in Sources */,
 				004 /* MainRepositoryView.swift in Sources */,
 				005 /* SidebarView.swift in Sources */,
@@ -287,7 +308,10 @@
 				016 /* GitStash.swift in Sources */,
 				017 /* GitSubmodule.swift in Sources */,
 				018 /* DirectoryWatcher.swift in Sources */,
+				A5977EE52F50B23E0027F68D /* DismissWindowView.swift in Sources */,
+				A5977EE32F50B2160027F68D /* WelcomeMainView.swift in Sources */,
 				A51E2B162F4DE1A100E83BE6 /* RefCell.swift in Sources */,
+				A5977EE12F50981C0027F68D /* WelcomeWindow.swift in Sources */,
 				019 /* RelativeDateFormatter.swift in Sources */,
 				022 /* View+Extensions.swift in Sources */,
 				E683A7EE1ACC5ADDA2C9F1B3 /* TreeEntry.swift in Sources */,

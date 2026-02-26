@@ -14,19 +14,20 @@ struct RecentView: View {
         if recent.isEmpty {
             EmptyView()
         } else {
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Recent Repositories")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                
-                ForEach(recent, id: \.self) {
-                    RecentRepositoryRow(data: $0)
+            VStack(alignment: .leading, spacing: 5) {
+                ForEach(recent, id: \.self) { data in
+                    RecentRepositoryRow(data: data) {
+                        NotificationCenter.default.post(name: .openRepositoryURL, object: data.url)
+                    }
                 }
-                Divider()
-                Button {
-                    appState.clearRecentRepositories()
-                } label: {
-                    Text("Clear recents")
+                Spacer()
+                HStack {
+                    Spacer()
+                    Button {
+                        appState.clearRecentRepositories()
+                    } label: {
+                        Text("Clear recents")
+                    }
                 }
             }
         }
@@ -42,7 +43,7 @@ struct RecentView: View {
             }
     }
     
-    private static let maxItems = 5
+    private static let maxItems = 8
     
     private static let shortcuts: [KeyboardShortcut] = {
         ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"].map {

@@ -12,7 +12,7 @@ struct PointingHandView: NSViewRepresentable {
         let view = CursorView()
         return view
     }
-
+    
     func updateNSView(_ nsView: CursorView, context: Context) {
         // No update needed
     }
@@ -29,11 +29,11 @@ class CursorView: NSView {
 
 extension View {
     @ViewBuilder
-    func `ifLet`<T, Content: View>(option: T?, transform: (Self, T) -> Content) -> some View {
-        if let option {
-            transform(self, option)
+    func optionalKeyboardShortcut(_ shortcut: KeyboardShortcut?) -> some View {
+        if let shortcut {
+            keyboardShortcut(shortcut)
         } else {
             self
         }
-    }    
+    }
 }

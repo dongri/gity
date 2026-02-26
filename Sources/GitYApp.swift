@@ -12,36 +12,46 @@ import Cocoa
 struct GitYApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
-    @StateObject private var appState = AppState()
+    @StateObject private var appState: AppState
+    
+    init() {
+        let appState = AppState()
+        self._appState = StateObject(wrappedValue: appState)
+        appState.setup()
+    }
     
     var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .frame(minWidth: 900, minHeight: 600)
-                .environmentObject(appState)
-                .task {
-                    appState.setup()
+        Group {
+//            WelcomeWindow()
+            
+            WindowGroup {
+                ContentView()
+                    .frame(minWidth: 900, minHeight: 600)
+                    .environmentObject(appState)
+//                    .task {
+//                        appState.setup()
+//                    }
+            }
+            .commands {
+                CommandGroup(replacing: .newItem) {
+                    Button("Open Repository...") {
+                        NotificationCenter.default.post(name: .openRepository, object: nil)
+                    }
+                    .keyboardShortcut("O", modifiers: .command)
                 }
-        }
-        .commands {
-            CommandGroup(replacing: .newItem) {
-                Button("Open Repository...") {
-                    NotificationCenter.default.post(name: .openRepository, object: nil)
+                
+                CommandGroup(after: .newItem) {
+                    Button("Clone Repository...") {
+                        NotificationCenter.default.post(name: .cloneRepository, object: nil)
+                    }
+                    .keyboardShortcut("C", modifiers: [.command, .shift])
                 }
-                .keyboardShortcut("O", modifiers: .command)
             }
             
-            CommandGroup(after: .newItem) {
-                Button("Clone Repository...") {
-                    NotificationCenter.default.post(name: .cloneRepository, object: nil)
-                }
-                .keyboardShortcut("C", modifiers: [.command, .shift])
+            Settings {
+                PreferencesView()
             }
-        }
-        
-        Settings {
-            PreferencesView()
-        }
+        }.environmentObject(appState)
     }
 }
 
