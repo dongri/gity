@@ -8,8 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		001 /* GitYApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 101 /* GitYApp.swift */; };
-		002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 102 /* ContentView.swift */; };
-		003 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 103 /* WelcomeView.swift */; };
 		004 /* MainRepositoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 104 /* MainRepositoryView.swift */; };
 		005 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 105 /* SidebarView.swift */; };
 		006 /* StageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 106 /* StageView.swift */; };
@@ -38,9 +36,10 @@
 		A5977EE72F50B8420027F68D /* WelcomeActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EE62F50B8420027F68D /* WelcomeActionButton.swift */; };
 		A5977EE92F50C6650027F68D /* Bundle+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EE82F50C6650027F68D /* Bundle+Utils.swift */; };
 		A5977EEB2F50C8120027F68D /* NSApp+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EEA2F50C8120027F68D /* NSApp+Utils.swift */; };
-		A5977EED2F50C8530027F68D /* WelcomeActionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EEC2F50C8530027F68D /* WelcomeActionData.swift */; };
+		A5977EED2F50C8530027F68D /* ActionHolder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EEC2F50C8530027F68D /* ActionHolder.swift */; };
 		A5977EF02F50CBC10027F68D /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EEF2F50CBC10027F68D /* AppState.swift */; };
 		A5977EF22F50CDBC0027F68D /* MainRepositoryWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EF12F50CDBC0027F68D /* MainRepositoryWindow.swift */; };
+		A5977EF42F50EE780027F68D /* EnvironmentValues+GitY.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EF32F50EE780027F68D /* EnvironmentValues+GitY.swift */; };
 		A59D4FC42F4B8E22009DBEF1 /* LLM in Frameworks */ = {isa = PBXBuildFile; productRef = CE63AAE17E0CF47A90A8516C /* LLM */; };
 		A59D4FC62F4B9AEA009DBEF1 /* ImageSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59D4FC52F4B9AEA009DBEF1 /* ImageSource.swift */; };
 		A5EF6BD22F4C67AB00E65923 /* KeyboardShortcutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5EF6BD12F4C67AB00E65923 /* KeyboardShortcutView.swift */; };
@@ -52,8 +51,6 @@
 		043948729140AEB1264630F0 /* LocalLLMService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = LocalLLMService.swift; sourceTree = "<group>"; };
 		100 /* GitY.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GitY.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		101 /* GitYApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GitYApp.swift; sourceTree = "<group>"; };
-		102 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		103 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		104 /* MainRepositoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainRepositoryView.swift; sourceTree = "<group>"; };
 		105 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SidebarView.swift; sourceTree = "<group>"; };
 		106 /* StageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StageView.swift; sourceTree = "<group>"; };
@@ -84,9 +81,10 @@
 		A5977EE62F50B8420027F68D /* WelcomeActionButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeActionButton.swift; sourceTree = "<group>"; };
 		A5977EE82F50C6650027F68D /* Bundle+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+Utils.swift"; sourceTree = "<group>"; };
 		A5977EEA2F50C8120027F68D /* NSApp+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSApp+Utils.swift"; sourceTree = "<group>"; };
-		A5977EEC2F50C8530027F68D /* WelcomeActionData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeActionData.swift; sourceTree = "<group>"; };
+		A5977EEC2F50C8530027F68D /* ActionHolder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionHolder.swift; sourceTree = "<group>"; };
 		A5977EEF2F50CBC10027F68D /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		A5977EF12F50CDBC0027F68D /* MainRepositoryWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainRepositoryWindow.swift; sourceTree = "<group>"; };
+		A5977EF32F50EE780027F68D /* EnvironmentValues+GitY.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EnvironmentValues+GitY.swift"; sourceTree = "<group>"; };
 		A59D4FC52F4B9AEA009DBEF1 /* ImageSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSource.swift; sourceTree = "<group>"; };
 		A5EF6BD12F4C67AB00E65923 /* KeyboardShortcutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -115,8 +113,10 @@
 		500 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				A5977EEF2F50CBC10027F68D /* AppState.swift */,
 				101 /* GitYApp.swift */,
+				A5977EEF2F50CBC10027F68D /* AppState.swift */,
+				A5977EEC2F50C8530027F68D /* ActionHolder.swift */,
+				A5977EF32F50EE780027F68D /* EnvironmentValues+GitY.swift */,
 				501 /* Models */,
 				502 /* Views */,
 				504 /* Services */,
@@ -145,8 +145,6 @@
 				A5977EEE2F50CB330027F68D /* Repository */,
 				A597786E2F506C630027F68D /* Welcome */,
 				A5EF6BCD2F4C671100E65923 /* Common */,
-				102 /* ContentView.swift */,
-				103 /* WelcomeView.swift */,
 				111 /* PreferencesView.swift */,
 			);
 			path = Views;
@@ -193,7 +191,6 @@
 		A597786E2F506C630027F68D /* Welcome */ = {
 			isa = PBXGroup;
 			children = (
-				A5977EEC2F50C8530027F68D /* WelcomeActionData.swift */,
 				A5977EE42F50B23E0027F68D /* DismissWindowButton.swift */,
 				A5977EE22F50B2160027F68D /* WelcomeMainView.swift */,
 				A597786F2F506CA40027F68D /* WelcomeWindowView.swift */,
@@ -308,9 +305,8 @@
 				A5EF6BD22F4C67AB00E65923 /* KeyboardShortcutView.swift in Sources */,
 				001 /* GitYApp.swift in Sources */,
 				A5977EF02F50CBC10027F68D /* AppState.swift in Sources */,
-				002 /* ContentView.swift in Sources */,
+				A5977EF42F50EE780027F68D /* EnvironmentValues+GitY.swift in Sources */,
 				A59778702F506CA40027F68D /* WelcomeWindowView.swift in Sources */,
-				003 /* WelcomeView.swift in Sources */,
 				004 /* MainRepositoryView.swift in Sources */,
 				005 /* SidebarView.swift in Sources */,
 				A50EFDD62F4C782C00112F01 /* RecentView.swift in Sources */,
@@ -326,7 +322,7 @@
 				014 /* GitCommit.swift in Sources */,
 				015 /* ChangedFile.swift in Sources */,
 				016 /* GitStash.swift in Sources */,
-				A5977EED2F50C8530027F68D /* WelcomeActionData.swift in Sources */,
+				A5977EED2F50C8530027F68D /* ActionHolder.swift in Sources */,
 				017 /* GitSubmodule.swift in Sources */,
 				018 /* DirectoryWatcher.swift in Sources */,
 				A5977EE52F50B23E0027F68D /* DismissWindowButton.swift in Sources */,

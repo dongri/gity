@@ -8,9 +8,9 @@
 import SwiftUI
 
 struct WelcomeActionButton: View {
-    let data: WelcomeActionData
+    let data: ActionHolder
     
-    init(_ data: WelcomeActionData) {
+    init(_ data: ActionHolder) {
         self.data = data
     }
     
@@ -35,7 +35,7 @@ struct WelcomeActionButton: View {
 
 #Preview {
     let actions = [
-        WelcomeActionData(
+        ActionHolder(
             title: "Open repository...",
             image: .system("folder"),
             shortcut: KeyboardShortcut("O", modifiers: .command),
@@ -44,7 +44,7 @@ struct WelcomeActionButton: View {
             }
         ),
         
-        WelcomeActionData(
+        ActionHolder(
             title: "Clone repository...",
             image: .system("square.and.arrow.down.on.square"),
             shortcut: KeyboardShortcut("C", modifiers: .command),

@@ -32,22 +32,25 @@ struct GitYApp: App {
         Group {
             Group {
                 WelcomeWindow(
-                    id: Window.welcome.rawValue
+                    id: Window.welcome.rawValue,
+                    actionCommands: actionCommands
                 )
+                .environment(\.openRepository, openRepository(at:))
                 
                 MainRepositoryWindow(
                     id: Window.repository.rawValue
                 )
+                .environment(\.closeRepository, closeRepository)
             }
             .environmentObject(appState)
             .commands {
                 CommandGroup(replacing: .newItem) {
-                    Button("Open Repository...", action: selectRepository)
-                        .keyboardShortcut("O", modifiers: .command)
-                }
-                CommandGroup(after: .newItem) {
-                    Button("Clone Repository...", action: cloneRepository)
-                        .keyboardShortcut("C", modifiers: [.command, .shift])
+                    let commands = actionCommands
+                    ForEach(commands.indices, id: \.self) {
+                        let item = commands[$0]
+                        Button(item.title, action: item.action)
+                            .optionalKeyboardShortcut(item.shortcut)
+                    }
                 }
             }
             
@@ -55,6 +58,23 @@ struct GitYApp: App {
                 PreferencesView()
             }
         }
+    }
+    
+    private var actionCommands: [ActionHolder] {
+        [
+            ActionHolder(
+                title: "Open repository...",
+                image: .system("folder"),
+                shortcut: KeyboardShortcut("O", modifiers: .command),
+                action: selectRepository
+            ),
+            ActionHolder(
+                title: "Clone repository...",
+                image: .system("square.and.arrow.down.on.square"),
+                shortcut: KeyboardShortcut("C", modifiers: [.command, .shift]),
+                action: cloneRepository
+            )
+        ]
     }
     
     private func selectRepository() {
@@ -95,7 +115,7 @@ struct GitYApp: App {
         alert.runModal()
     }
     
-    private func closeRepository(_ url: URL) {
+    private func closeRepository() {
         appState.currentRepository = nil
         dismissWindow(id: Window.repository.rawValue)
         openWindow(id: Window.welcome.rawValue)
@@ -120,6 +140,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 // Traverse up to find the nearest .git directory
                 let repoURL = findGitRoot(from: url) ?? url
                 NotificationCenter.default.post(name: .openRepositoryURL, object: repoURL)
+                break
             }
         }
     }
@@ -141,8 +162,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
 // MARK: - Notification Names
 extension Notification.Name {
-    static let openRepository = Notification.Name("openRepository")
-    static let cloneRepository = Notification.Name("cloneRepository")
+//    static let openRepository = Notification.Name("openRepository")
+//    static let cloneRepository = Notification.Name("cloneRepository")
     static let openRepositoryURL = Notification.Name("openRepositoryURL")
     static let repositoryChanged = Notification.Name("repositoryChanged")
     static let branchChanged = Notification.Name("branchChanged")

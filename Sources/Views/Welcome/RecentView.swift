@@ -9,9 +9,8 @@ import SwiftUI
 
 struct RecentView: View {
     @EnvironmentObject private var appState: AppState
-    
-    @Environment(\.openWindow) var openWindow
-    
+    @Environment(\.openRepository) var openRepository
+        
     var body: some View {
         if recent.isEmpty {
             EmptyView()
@@ -19,8 +18,7 @@ struct RecentView: View {
             VStack(alignment: .leading, spacing: 5) {
                 ForEach(recent, id: \.self) { data in
                     RecentRepositoryRow(data: data) {
-//                        NotificationCenter.default.post(name: .openRepositoryURL, object: data.url)
-                        fatalError()
+                        openRepository(data.url)
                     }
                 }
                 Spacer()

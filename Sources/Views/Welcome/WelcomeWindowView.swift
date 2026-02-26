@@ -14,6 +14,7 @@ struct WelcomeWindowView: View {
     let title: String
     let subtitle1: String
     let subtitle2: String
+    let actionCommands: [ActionHolder]
     
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -21,7 +22,8 @@ struct WelcomeWindowView: View {
                 WelcomeMainView(
                     title: title,
                     subtitle1: subtitle1,
-                    subtitle2: subtitle2
+                    subtitle2: subtitle2,
+                    actionCommands: actionCommands
                 )
                 .padding(.top, 20)
                 .padding(.horizontal, 56)
@@ -55,7 +57,8 @@ struct WelcomeWindowView: View {
     WelcomeWindowView(
         title: "GitY",
         subtitle1: "A powerful Git client for macOS",
-        subtitle2: "Version 1.0"
+        subtitle2: "Version 1.0",
+        actionCommands: []
     )
     .frame(width: 740, height: 460)
     .environmentObject(AppState())

@@ -9,14 +9,19 @@ import SwiftUI
 
 struct WelcomeWindow: Scene {
     private let windowId: String
+    private let actionCommands: [ActionHolder]
     
     private var versionInfo: String {
         let version = Bundle.versionString ?? "N/A"
         return "Version \(version)"
     }
     
-    init(id: String) {
+    init(
+        id: String,
+        actionCommands: [ActionHolder]
+    ) {
         self.windowId = id
+        self.actionCommands = actionCommands
     }
     
     var body: some Scene {
@@ -24,7 +29,8 @@ struct WelcomeWindow: Scene {
             WelcomeWindowView(
                 title: Bundle.appName ?? "N/A",
                 subtitle1: "A powerful Git client for macOS",
-                subtitle2: versionInfo
+                subtitle2: versionInfo,
+                actionCommands: actionCommands
             )
             .ignoresSafeArea()
             .frame(width: 740, height: 460)

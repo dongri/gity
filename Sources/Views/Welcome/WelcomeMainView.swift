@@ -14,6 +14,7 @@ struct WelcomeMainView: View {
     let title: String
     let subtitle1: String
     let subtitle2: String
+    let actionCommands: [ActionHolder]
     
     var body: some View {
         VStack(spacing: 0) {
@@ -59,30 +60,10 @@ struct WelcomeMainView: View {
     var actionsView: some View {
         HStack {
             VStack(spacing: 10) {
-                ForEach(actions.indices, id: \.self) {
-                    WelcomeActionButton(actions[$0])
+                ForEach(actionCommands.indices, id: \.self) {
+                    WelcomeActionButton(actionCommands[$0])
                 }
             }
         }
     }
-    
-    private let actions = [
-        WelcomeActionData(
-            title: "Open repository...",
-            image: .system("folder"),
-            shortcut: KeyboardShortcut("O", modifiers: .command),
-            action: {
-                // no op
-            }
-        ),
-        
-        WelcomeActionData(
-            title: "Clone repository...",
-            image: .system("square.and.arrow.down.on.square"),
-            shortcut: KeyboardShortcut("C", modifiers: .command),
-            action: {
-                // no op
-            }
-        )
-    ]
 }
