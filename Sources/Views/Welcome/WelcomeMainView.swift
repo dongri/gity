@@ -31,18 +31,25 @@ struct WelcomeMainView: View {
                     .frame(width: 128, height: 128)
             }
             
-            Text(title)
-                .font(.system(size: 36, weight: .bold))
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .minimumScaleFactor(0.5)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(spacing: 10) {
+                Text(title)
+                    .font(.system(size: 36, weight: .bold))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.5)
+                    .fixedSize(horizontal: false, vertical: true)
+                
+                Text("A powerful Git client for macOS")
+                    .font(.title3)
+                    .foregroundColor(.secondary)
+                
+                Text(subtitle)
+                    .foregroundColor(.secondary)
+                    .font(.system(size: 13.5))
+            }
             
-            Text(subtitle)
-                .foregroundColor(.secondary)
-                .font(.system(size: 13.5))
-            
-            Spacer().frame(height: 40)
+            Spacer()
+                //.frame(height: 40)
             
             actionsView
             Spacer()
@@ -50,6 +57,32 @@ struct WelcomeMainView: View {
     }
     
     var actionsView: some View {
-        EmptyView()
+        HStack {
+            VStack(spacing: 10) {
+                ForEach(actions.indices, id: \.self) {
+                    WelcomeActionButton(actions[$0])
+                }
+            }
+        }
     }
+    
+    private let actions = [
+        WelcomeActionData(
+            title: "Open repository...",
+            image: .system("folder"),
+            shortcut: KeyboardShortcut("O", modifiers: .command),
+            action: {
+                // no op
+            }
+        ),
+        
+        WelcomeActionData(
+            title: "Clone repository...",
+            image: .system("square.and.arrow.down.on.square"),
+            shortcut: KeyboardShortcut("C", modifiers: .command),
+            action: {
+                // no op
+            }
+        )
+    ]
 }
