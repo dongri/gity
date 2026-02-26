@@ -28,7 +28,7 @@ struct WelcomeWindowView: View {
                 .padding(.top, 20)
                 .padding(.horizontal, 56)
                 .padding(.bottom, 16)
-                .frame(width: 460)
+                .frame(minWidth: 460)
                 .frame(maxHeight: .infinity)
                 
                 RecentView()

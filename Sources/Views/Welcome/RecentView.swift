@@ -31,6 +31,7 @@ struct RecentView: View {
                     }
                 }
             }
+            .frame(minWidth: 250)
         }
     }
     

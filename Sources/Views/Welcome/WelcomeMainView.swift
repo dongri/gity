@@ -51,19 +51,21 @@ struct WelcomeMainView: View {
             }
             
             Spacer()
+                .frame(maxWidth: .infinity)
             
             actionsView
             Spacer()
+                .frame(maxWidth: .infinity)
         }
     }
     
     var actionsView: some View {
-        HStack {
-            VStack(spacing: 10) {
-                ForEach(actionCommands.indices, id: \.self) {
-                    WelcomeActionButton(actionCommands[$0])
-                }
+        VStack(spacing: 10) {
+            ForEach(actionCommands.indices, id: \.self) {
+                WelcomeActionButton(actionCommands[$0])
             }
         }
+        .padding(.horizontal, 20)
+        .frame(width: 460)
     }
 }
