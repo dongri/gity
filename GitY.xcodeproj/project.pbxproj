@@ -39,6 +39,7 @@
 		A5977EE92F50C6650027F68D /* Bundle+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EE82F50C6650027F68D /* Bundle+Utils.swift */; };
 		A5977EEB2F50C8120027F68D /* NSApp+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EEA2F50C8120027F68D /* NSApp+Utils.swift */; };
 		A5977EED2F50C8530027F68D /* WelcomeActionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EEC2F50C8530027F68D /* WelcomeActionData.swift */; };
+		A5977EF02F50CBC10027F68D /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EEF2F50CBC10027F68D /* AppState.swift */; };
 		A59D4FC42F4B8E22009DBEF1 /* LLM in Frameworks */ = {isa = PBXBuildFile; productRef = CE63AAE17E0CF47A90A8516C /* LLM */; };
 		A59D4FC62F4B9AEA009DBEF1 /* ImageSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59D4FC52F4B9AEA009DBEF1 /* ImageSource.swift */; };
 		A5EF6BD22F4C67AB00E65923 /* KeyboardShortcutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5EF6BD12F4C67AB00E65923 /* KeyboardShortcutView.swift */; };
@@ -83,6 +84,7 @@
 		A5977EE82F50C6650027F68D /* Bundle+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+Utils.swift"; sourceTree = "<group>"; };
 		A5977EEA2F50C8120027F68D /* NSApp+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSApp+Utils.swift"; sourceTree = "<group>"; };
 		A5977EEC2F50C8530027F68D /* WelcomeActionData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeActionData.swift; sourceTree = "<group>"; };
+		A5977EEF2F50CBC10027F68D /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		A59D4FC52F4B9AEA009DBEF1 /* ImageSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSource.swift; sourceTree = "<group>"; };
 		A5EF6BD12F4C67AB00E65923 /* KeyboardShortcutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -111,6 +113,7 @@
 		500 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
+				A5977EEF2F50CBC10027F68D /* AppState.swift */,
 				101 /* GitYApp.swift */,
 				501 /* Models */,
 				502 /* Views */,
@@ -301,6 +304,7 @@
 				A59D4FC62F4B9AEA009DBEF1 /* ImageSource.swift in Sources */,
 				A5EF6BD22F4C67AB00E65923 /* KeyboardShortcutView.swift in Sources */,
 				001 /* GitYApp.swift in Sources */,
+				A5977EF02F50CBC10027F68D /* AppState.swift in Sources */,
 				002 /* ContentView.swift in Sources */,
 				A59778702F506CA40027F68D /* WelcomeWindowView.swift in Sources */,
 				003 /* WelcomeView.swift in Sources */,

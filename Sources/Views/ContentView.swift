@@ -43,7 +43,6 @@ struct ContentView: View {
     private func openRepository(at url: URL) {
         do {
             let repository = try GitRepository(url: url)
-            appState.addRecentRepository(url)
             appState.currentRepository = repository
             Task {
                 await repository.loadCommits()
@@ -55,37 +54,5 @@ struct ContentView: View {
             alert.alertStyle = .critical
             alert.runModal()
         }
-    }
-}
-
-// MARK: - App State
-class AppState: ObservableObject {
-    @Published var currentRepository: GitRepository?
-    @Published var recentRepositories: [URL] = []
-        
-    func setup() {
-        loadRecentRepositories()
-    }
-    
-    private func loadRecentRepositories() {
-        if let data = UserDefaults.standard.data(forKey: "recentRepositories"),
-           let urls = try? JSONDecoder().decode([URL].self, from: data) {
-            recentRepositories = urls
-        }
-    }
-    
-    func addRecentRepository(_ url: URL) {
-        recentRepositories.removeAll { $0 == url }
-        recentRepositories.insert(url, at: 0)
-        if recentRepositories.count > 10 {
-            recentRepositories = Array(recentRepositories.prefix(10))
-        }
-        if let data = try? JSONEncoder().encode(recentRepositories) {
-            UserDefaults.standard.set(data, forKey: "recentRepositories")
-        }
-    }
-    
-    func clearRecentRepositories() {
-        recentRepositories.removeAll()
     }
 }
