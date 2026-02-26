@@ -14,7 +14,7 @@ struct RecentRepositoryRow: View {
     var body: some View {
         Button(action: action) {
             HStack {
-                Image(systemName: "folder.fill")
+                Image(.system("folder.fill"))
                     .foregroundColor(.accentColor)
                 
                 VStack(alignment: .leading, spacing: 2) {

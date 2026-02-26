@@ -7,13 +7,6 @@
 
 import SwiftUI
 
-struct WelcomeActionData {
-    let title: String
-    let image: ImageSource
-    let shortcut: KeyboardShortcut?
-    let action: () -> Void
-}
-
 struct WelcomeActionButton: View {
     let data: WelcomeActionData
     

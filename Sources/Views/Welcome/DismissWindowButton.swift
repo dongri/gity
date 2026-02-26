@@ -14,7 +14,7 @@ struct DismissWindowButton: View {
     var body: some View {
         Button(action: action) {
             Image(.system("xmark.circle.fill"))
-                .foregroundColor(isHoveringCloseButton ? Color(.secondaryLabelColor) : Color(.tertiaryLabelColor))
+                .foregroundColor(imageForeground)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text("Close"))
@@ -25,5 +25,9 @@ struct DismissWindowButton: View {
         }
         .padding(10)
         .transition(.opacity.animation(.easeInOut(duration: 0.25)))
+    }
+    
+    private var imageForeground: Color {
+        isHoveringCloseButton ? Color(.secondaryLabelColor) : Color(.tertiaryLabelColor)
     }
 }

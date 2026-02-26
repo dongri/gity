@@ -11,15 +11,17 @@ struct WelcomeWindowView: View {
     @Environment(\.colorScheme)
     private var colorScheme
 
-    var title: String
-    var subtitle: String
+    let title: String
+    let subtitle1: String
+    let subtitle2: String
     
     var body: some View {
         ZStack(alignment: .topLeading) {
             HStack(spacing: 0) {
                 WelcomeMainView(
                     title: title,
-                    subtitle: subtitle
+                    subtitle1: subtitle1,
+                    subtitle2: subtitle2
                 )
                 .padding(.top, 20)
                 .padding(.horizontal, 56)
@@ -52,7 +54,8 @@ struct WelcomeWindowView: View {
 #Preview {
     WelcomeWindowView(
         title: "GitY",
-        subtitle: "Version 1.0"
+        subtitle1: "A powerful Git client for macOS",
+        subtitle2: "Version 1.0"
     )
     .frame(width: 740, height: 460)
     .environmentObject(AppState())

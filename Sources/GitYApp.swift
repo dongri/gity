@@ -28,9 +28,6 @@ struct GitYApp: App {
                 ContentView()
                     .frame(minWidth: 900, minHeight: 600)
                     .environmentObject(appState)
-//                    .task {
-//                        appState.setup()
-//                    }
             }
             .commands {
                 CommandGroup(replacing: .newItem) {

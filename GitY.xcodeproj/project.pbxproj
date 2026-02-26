@@ -36,6 +36,9 @@
 		A5977EE32F50B2160027F68D /* WelcomeMainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EE22F50B2160027F68D /* WelcomeMainView.swift */; };
 		A5977EE52F50B23E0027F68D /* DismissWindowButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EE42F50B23E0027F68D /* DismissWindowButton.swift */; };
 		A5977EE72F50B8420027F68D /* WelcomeActionButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EE62F50B8420027F68D /* WelcomeActionButton.swift */; };
+		A5977EE92F50C6650027F68D /* Bundle+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EE82F50C6650027F68D /* Bundle+Utils.swift */; };
+		A5977EEB2F50C8120027F68D /* NSApp+Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EEA2F50C8120027F68D /* NSApp+Utils.swift */; };
+		A5977EED2F50C8530027F68D /* WelcomeActionData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EEC2F50C8530027F68D /* WelcomeActionData.swift */; };
 		A59D4FC42F4B8E22009DBEF1 /* LLM in Frameworks */ = {isa = PBXBuildFile; productRef = CE63AAE17E0CF47A90A8516C /* LLM */; };
 		A59D4FC62F4B9AEA009DBEF1 /* ImageSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59D4FC52F4B9AEA009DBEF1 /* ImageSource.swift */; };
 		A5EF6BD22F4C67AB00E65923 /* KeyboardShortcutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5EF6BD12F4C67AB00E65923 /* KeyboardShortcutView.swift */; };
@@ -77,6 +80,9 @@
 		A5977EE22F50B2160027F68D /* WelcomeMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeMainView.swift; sourceTree = "<group>"; };
 		A5977EE42F50B23E0027F68D /* DismissWindowButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DismissWindowButton.swift; sourceTree = "<group>"; };
 		A5977EE62F50B8420027F68D /* WelcomeActionButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeActionButton.swift; sourceTree = "<group>"; };
+		A5977EE82F50C6650027F68D /* Bundle+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+Utils.swift"; sourceTree = "<group>"; };
+		A5977EEA2F50C8120027F68D /* NSApp+Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSApp+Utils.swift"; sourceTree = "<group>"; };
+		A5977EEC2F50C8530027F68D /* WelcomeActionData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeActionData.swift; sourceTree = "<group>"; };
 		A59D4FC52F4B9AEA009DBEF1 /* ImageSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSource.swift; sourceTree = "<group>"; };
 		A5EF6BD12F4C67AB00E65923 /* KeyboardShortcutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -133,7 +139,6 @@
 			children = (
 				A597786E2F506C630027F68D /* Welcome */,
 				A5EF6BCD2F4C671100E65923 /* Common */,
-				A50EFDD22F4C77C400112F01 /* Recent */,
 				102 /* ContentView.swift */,
 				103 /* WelcomeView.swift */,
 				104 /* MainRepositoryView.swift */,
@@ -164,6 +169,8 @@
 				118 /* DirectoryWatcher.swift */,
 				119 /* RelativeDateFormatter.swift */,
 				A59D4FC52F4B9AEA009DBEF1 /* ImageSource.swift */,
+				A5977EE82F50C6650027F68D /* Bundle+Utils.swift */,
+				A5977EEA2F50C8120027F68D /* NSApp+Utils.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -185,23 +192,17 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		A50EFDD22F4C77C400112F01 /* Recent */ = {
-			isa = PBXGroup;
-			children = (
-				A50EFDD32F4C77F700112F01 /* RecentRepositoryRow.swift */,
-				A50EFDD52F4C782C00112F01 /* RecentView.swift */,
-			);
-			path = Recent;
-			sourceTree = "<group>";
-		};
 		A597786E2F506C630027F68D /* Welcome */ = {
 			isa = PBXGroup;
 			children = (
+				A5977EEC2F50C8530027F68D /* WelcomeActionData.swift */,
 				A5977EE42F50B23E0027F68D /* DismissWindowButton.swift */,
 				A5977EE22F50B2160027F68D /* WelcomeMainView.swift */,
 				A597786F2F506CA40027F68D /* WelcomeWindowView.swift */,
 				A5977EE02F50981C0027F68D /* WelcomeWindow.swift */,
 				A5977EE62F50B8420027F68D /* WelcomeActionButton.swift */,
+				A50EFDD32F4C77F700112F01 /* RecentRepositoryRow.swift */,
+				A50EFDD52F4C782C00112F01 /* RecentView.swift */,
 			);
 			path = Welcome;
 			sourceTree = "<group>";
@@ -309,16 +310,19 @@
 				014 /* GitCommit.swift in Sources */,
 				015 /* ChangedFile.swift in Sources */,
 				016 /* GitStash.swift in Sources */,
+				A5977EED2F50C8530027F68D /* WelcomeActionData.swift in Sources */,
 				017 /* GitSubmodule.swift in Sources */,
 				018 /* DirectoryWatcher.swift in Sources */,
 				A5977EE52F50B23E0027F68D /* DismissWindowButton.swift in Sources */,
 				A5977EE32F50B2160027F68D /* WelcomeMainView.swift in Sources */,
+				A5977EEB2F50C8120027F68D /* NSApp+Utils.swift in Sources */,
 				A51E2B162F4DE1A100E83BE6 /* RefCell.swift in Sources */,
 				A5977EE12F50981C0027F68D /* WelcomeWindow.swift in Sources */,
 				A5977EE72F50B8420027F68D /* WelcomeActionButton.swift in Sources */,
 				019 /* RelativeDateFormatter.swift in Sources */,
 				022 /* View+Extensions.swift in Sources */,
 				E683A7EE1ACC5ADDA2C9F1B3 /* TreeEntry.swift in Sources */,
+				A5977EE92F50C6650027F68D /* Bundle+Utils.swift in Sources */,
 				A85E1FB5577507F2B2DB6F79 /* LocalLLMService.swift in Sources */,
 				A50EFDD42F4C77F700112F01 /* RecentRepositoryRow.swift in Sources */,
 			);

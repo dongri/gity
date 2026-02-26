@@ -11,8 +11,9 @@ struct WelcomeMainView: View {
     @Environment(\.colorScheme)
     private var colorScheme
 
-    var title: String
-    var subtitle: String
+    let title: String
+    let subtitle1: String
+    let subtitle2: String
     
     var body: some View {
         VStack(spacing: 0) {
@@ -39,17 +40,16 @@ struct WelcomeMainView: View {
                     .minimumScaleFactor(0.5)
                     .fixedSize(horizontal: false, vertical: true)
                 
-                Text("A powerful Git client for macOS")
+                Text(subtitle1)
                     .font(.title3)
                     .foregroundColor(.secondary)
                 
-                Text(subtitle)
+                Text(subtitle2)
                     .foregroundColor(.secondary)
                     .font(.system(size: 13.5))
             }
             
             Spacer()
-                //.frame(height: 40)
             
             actionsView
             Spacer()

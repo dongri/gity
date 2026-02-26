@@ -10,11 +10,17 @@ import SwiftUI
 struct WelcomeWindow: Scene {
     static let windowId = "w_id.welcome"
     
+    private var versionInfo: String {
+        let version = Bundle.versionString ?? "N/A"
+        return "Version \(version)"
+    }
+    
     var body: some Scene {
         Window("Welcome to GitY", id: Self.windowId) {
             WelcomeWindowView(
-                title: "GitY",
-                subtitle: "Version 1.0"
+                title: Bundle.appName ?? "N/A",
+                subtitle1: "A powerful Git client for macOS",
+                subtitle2: versionInfo
             )
             .ignoresSafeArea()
             .frame(width: 740, height: 460)
@@ -32,12 +38,5 @@ struct WelcomeWindow: Scene {
         }
         .windowResizability(.contentSize)
         .windowStyle(.hiddenTitleBar)
-    }
-}
-
-
-extension NSApplication {
-    func findWindow(_ id: String) -> NSWindow? {
-        windows.first { $0.identifier?.rawValue == id }
     }
 }
