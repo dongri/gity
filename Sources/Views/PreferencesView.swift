@@ -486,8 +486,9 @@ struct CLIInstaller {
         open -a "$APP_PATH" "$REPO_PATH"
         """
         
-        // Create temp file
-        let tempPath = "/tmp/gity_install_script"
+        // Create temp file securely
+        let tempDir = FileManager.default.temporaryDirectory
+        let tempPath = tempDir.appendingPathComponent("gity_install_\(UUID().uuidString).sh").path
         let installScript = """
         #!/bin/bash
         # Create /usr/local/bin if it doesn't exist
