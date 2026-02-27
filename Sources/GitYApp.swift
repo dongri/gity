@@ -10,42 +10,122 @@ import Cocoa
 
 @main
 struct GitYApp: App {
+    enum Window: String {
+        case welcome = "w_id.welcome"
+        case repository = "w_id.repository"
+    }
+    
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     
-    @StateObject private var appState = AppState()
+    @StateObject private var appState: AppState
+    
+    @Environment(\.openWindow) private var openWindow
+    @Environment(\.dismissWindow) private var dismissWindow
+    
+    init() {
+        let appState = AppState()
+        self._appState = StateObject(wrappedValue: appState)
+        appState.setup()
+        appDelegate.openRepositoryCallback = openRepository(at:)
+    }
     
     var body: some Scene {
-        WindowGroup {
-            ContentView()
-                .frame(minWidth: 900, minHeight: 600)
-                .environmentObject(appState)
-                .task {
-                    appState.setup()
+        Group {
+            Group {
+                WelcomeWindow(
+                    id: Window.welcome.rawValue,
+                    actionCommands: actionCommands
+                )
+                .environment(\.openRepository, openRepository(at:))
+                
+                MainRepositoryWindow(
+                    id: Window.repository.rawValue
+                )
+                .environment(\.closeRepository, closeRepository)
+            }
+            .environmentObject(appState)
+            .commands {
+                CommandGroup(replacing: .newItem) {
+                    let commands = actionCommands
+                    ForEach(commands.indices, id: \.self) {
+                        let item = commands[$0]
+                        Button(item.title, action: item.action)
+                            .optionalKeyboardShortcut(item.shortcut)
+                    }
                 }
-        }
-        .commands {
-            CommandGroup(replacing: .newItem) {
-                Button("Open Repository...") {
-                    NotificationCenter.default.post(name: .openRepository, object: nil)
-                }
-                .keyboardShortcut("O", modifiers: .command)
             }
             
-            CommandGroup(after: .newItem) {
-                Button("Clone Repository...") {
-                    NotificationCenter.default.post(name: .cloneRepository, object: nil)
-                }
-                .keyboardShortcut("C", modifiers: [.command, .shift])
+            Settings {
+                PreferencesView()
             }
         }
+    }
+    
+    private var actionCommands: [ActionHolder] {
+        [
+            ActionHolder(
+                title: "Open repository...",
+                image: .system("folder"),
+                shortcut: KeyboardShortcut("O", modifiers: .command),
+                action: selectRepository
+            ),
+            ActionHolder(
+                title: "Clone repository...",
+                image: .system("square.and.arrow.down.on.square"),
+                shortcut: KeyboardShortcut("C", modifiers: [.command, .shift]),
+                action: cloneRepository
+            )
+        ]
+    }
+    
+    private func selectRepository() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.allowsMultipleSelection = false
+        panel.message = "Select a Git repository"
         
-        Settings {
-            PreferencesView()
+        if panel.runModal() == .OK, let url = panel.url {
+            openRepository(at: url)
         }
+    }
+    
+    private func openRepository(at url: URL) {
+        do {
+            let repository = try GitRepository(url: url)
+            appState.currentRepository = repository
+            openWindow(id: Window.repository.rawValue)
+            dismissWindow(id: Window.welcome.rawValue)
+            
+            Task {
+                await repository.loadCommits()
+            }
+        } catch {
+            let alert = NSAlert()
+            alert.messageText = "Failed to open repository"
+            alert.informativeText = error.localizedDescription
+            alert.alertStyle = .critical
+            alert.runModal()
+        }
+    }
+    
+    private func cloneRepository() {
+        let alert = NSAlert()
+        alert.messageText = "Sorry, clone repository isn't implemented yet"
+        alert.alertStyle = .informational
+        alert.runModal()
+    }
+    
+    private func closeRepository() {
+        appState.currentRepository = nil
+        dismissWindow(id: Window.repository.rawValue)
+        openWindow(id: Window.welcome.rawValue)
     }
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    var openRepositoryCallback: ((URL) -> Void)?
+    
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Ensure the app appears in the Dock and has a menu bar
         // This is necessary when running via `swift run` or as a CLI binary
@@ -58,12 +138,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func application(_ application: NSApplication, open urls: [URL]) {
-        for url in urls {
-            if url.hasDirectoryPath {
-                // Traverse up to find the nearest .git directory
-                let repoURL = findGitRoot(from: url) ?? url
-                NotificationCenter.default.post(name: .openRepositoryURL, object: repoURL)
-            }
+        guard let openRepositoryCallback else {
+            return
+        }
+        // WARN: here I removed the loop which iterates over all items
+        // it seems to the me most correct approach to choose first/last
+        // acceptable element and proceed with its value
+        if let repoURL = urls
+            .first(where: { $0.hasDirectoryPath })
+            .map({ findGitRoot(from: $0) ?? $0 }) {
+            openRepositoryCallback(repoURL)
         }
     }
     
@@ -80,14 +164,4 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         return nil
     }
-}
-
-// MARK: - Notification Names
-extension Notification.Name {
-    static let openRepository = Notification.Name("openRepository")
-    static let cloneRepository = Notification.Name("cloneRepository")
-    static let openRepositoryURL = Notification.Name("openRepositoryURL")
-    static let repositoryChanged = Notification.Name("repositoryChanged")
-    static let branchChanged = Notification.Name("branchChanged")
-    static let indexChanged = Notification.Name("indexChanged")
 }

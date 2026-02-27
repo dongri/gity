@@ -9,13 +9,12 @@ import SwiftUI
 
 struct RecentRepositoryRow: View {
     let data: RecentRepositoryData
+    let action: () -> Void
     
     var body: some View {
-        Button {
-            NotificationCenter.default.post(name: .openRepositoryURL, object: url)
-        } label: {
+        Button(action: action) {
             HStack {
-                Image(systemName: "folder.fill")
+                Image(.system("folder.fill"))
                     .foregroundColor(.accentColor)
                 
                 VStack(alignment: .leading, spacing: 2) {
@@ -36,17 +35,13 @@ struct RecentRepositoryRow: View {
                         .foregroundColor(.secondary)
                 }
             }
-            .padding(.vertical, 8)
-            .padding(.horizontal, 12)
+            .padding(8)
             .background(Color(nsColor: .controlBackgroundColor))
             .cornerRadius(8)
         }
         .buttonStyle(.plain)
         .pointingHandCursor()
-        .ifLet(option: data.shortcut) { view, shortcut in
-            view
-                .keyboardShortcut(shortcut)
-        }
+        .optionalKeyboardShortcut(data.shortcut)
     }
     
     private var url: URL {
