@@ -9,6 +9,8 @@ import SwiftUI
 
 struct SubmoduleDetailView: View {
     @ObservedObject var repository: GitRepository
+    @Environment(\.openRepository) var openRepository
+
     let submodule: GitSubmodule
     
     var body: some View {
@@ -60,10 +62,11 @@ struct SubmoduleDetailView: View {
         }
         .padding()
     }
-    
+        
     private func openSubmodule() {
         let submodulePath = repository.workingDirectory.appendingPathComponent(submodule.path)
-        NotificationCenter.default.post(name: .openRepositoryURL, object: submodulePath)
+        openRepository(submodulePath)
+        
     }
     
     private func updateSubmodule() {

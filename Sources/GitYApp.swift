@@ -26,6 +26,7 @@ struct GitYApp: App {
         let appState = AppState()
         self._appState = StateObject(wrappedValue: appState)
         appState.setup()
+        appDelegate.openRepositoryCallback = openRepository(at:)
     }
     
     var body: some Scene {
@@ -123,6 +124,8 @@ struct GitYApp: App {
 }
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    var openRepositoryCallback: ((URL) -> Void)?
+    
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Ensure the app appears in the Dock and has a menu bar
         // This is necessary when running via `swift run` or as a CLI binary
@@ -135,13 +138,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
     
     func application(_ application: NSApplication, open urls: [URL]) {
-        for url in urls {
-            if url.hasDirectoryPath {
-                // Traverse up to find the nearest .git directory
-                let repoURL = findGitRoot(from: url) ?? url
-                NotificationCenter.default.post(name: .openRepositoryURL, object: repoURL)
-                break
-            }
+        guard let openRepositoryCallback else {
+            return
+        }
+        // WARN: here I removed the loop which iterates over all items
+        // it seems to the me most correct approach to choose first/last
+        // acceptable element and proceed with its value
+        if let repoURL = urls
+            .first(where: { $0.hasDirectoryPath })
+            .map({ findGitRoot(from: $0) ?? $0 }) {
+            openRepositoryCallback(repoURL)
         }
     }
     
@@ -158,14 +164,4 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         return nil
     }
-}
-
-// MARK: - Notification Names
-extension Notification.Name {
-//    static let openRepository = Notification.Name("openRepository")
-//    static let cloneRepository = Notification.Name("cloneRepository")
-    static let openRepositoryURL = Notification.Name("openRepositoryURL")
-    static let repositoryChanged = Notification.Name("repositoryChanged")
-    static let branchChanged = Notification.Name("branchChanged")
-    static let indexChanged = Notification.Name("indexChanged")
 }
