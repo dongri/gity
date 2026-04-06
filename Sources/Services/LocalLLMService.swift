@@ -113,6 +113,26 @@ class LocalLLMService: ObservableObject {
             )!,
             filename: "llama-3.2-1b-instruct-q4_k_m.gguf",
             template: .chatML()
+        ),
+        AIModel(
+            id: "gemma-4-e2b-it",
+            name: "Gemma-4-E2B-IT",
+            sizeDescription: "≈4.97 GB · Q8_0",
+            url: URL(string:
+                "https://huggingface.co/ggml-org/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-e2b-it-Q8_0.gguf"
+            )!,
+            filename: "gemma-4-e2b-it-Q8_0.gguf",
+            template: .gemma
+        ),
+        AIModel(
+            id: "gemma-4-e4b-it",
+            name: "Gemma-4-E4B-IT",
+            sizeDescription: "≈4.98 GB · Q4_K_M",
+            url: URL(string:
+                "https://huggingface.co/unsloth/gemma-4-E4B-it-GGUF/resolve/main/gemma-4-E4B-it-Q4_K_M.gguf"
+            )!,
+            filename: "gemma-4-E4B-it-Q4_K_M.gguf",
+            template: .gemma
         )
     ]
 
@@ -271,8 +291,20 @@ class LocalLLMService: ObservableObject {
         bot.reset()
 
 
-        // Use chatML template for all models
-        bot.template = .chatML(systemPrompt)
+        // Use model-appropriate template with system prompt
+        let templateWithSystem: Template
+        if model.id.hasPrefix("gemma") {
+            templateWithSystem = Template(
+                system: ("<start_of_turn>system\n", "<end_of_turn>\n"),
+                user: ("<start_of_turn>user\n", "<end_of_turn>\n"),
+                bot: ("<start_of_turn>model\n", "<end_of_turn>\n"),
+                stopSequence: "<end_of_turn>",
+                systemPrompt: systemPrompt
+            )
+        } else {
+            templateWithSystem = .chatML(systemPrompt)
+        }
+        bot.template = templateWithSystem
 
         // Simple output handling
         outputSubscription = bot.$output
