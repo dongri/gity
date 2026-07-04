@@ -42,6 +42,8 @@
 		A5977EF42F50EE780027F68D /* EnvironmentValues+GitY.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5977EF32F50EE780027F68D /* EnvironmentValues+GitY.swift */; };
 		A59D4FC42F4B8E22009DBEF1 /* LLM in Frameworks */ = {isa = PBXBuildFile; productRef = CE63AAE17E0CF47A90A8516C /* LLM */; };
 		A59D4FC62F4B9AEA009DBEF1 /* ImageSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59D4FC52F4B9AEA009DBEF1 /* ImageSource.swift */; };
+		A5CA53382F5F6E12007FCCA1 /* CommitData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CA53372F5F6E12007FCCA1 /* CommitData.swift */; };
+		A5CA533C2F5F7657007FCCA1 /* ClearableTextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5CA533B2F5F7657007FCCA1 /* ClearableTextField.swift */; };
 		A5EF6BD22F4C67AB00E65923 /* KeyboardShortcutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5EF6BD12F4C67AB00E65923 /* KeyboardShortcutView.swift */; };
 		A85E1FB5577507F2B2DB6F79 /* LocalLLMService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 043948729140AEB1264630F0 /* LocalLLMService.swift */; };
 		E683A7EE1ACC5ADDA2C9F1B3 /* TreeEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42EF712F30B5056EC712D606 /* TreeEntry.swift */; };
@@ -86,6 +88,8 @@
 		A5977EF12F50CDBC0027F68D /* MainRepositoryWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainRepositoryWindow.swift; sourceTree = "<group>"; };
 		A5977EF32F50EE780027F68D /* EnvironmentValues+GitY.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EnvironmentValues+GitY.swift"; sourceTree = "<group>"; };
 		A59D4FC52F4B9AEA009DBEF1 /* ImageSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageSource.swift; sourceTree = "<group>"; };
+		A5CA53372F5F6E12007FCCA1 /* CommitData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommitData.swift; sourceTree = "<group>"; };
+		A5CA533B2F5F7657007FCCA1 /* ClearableTextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearableTextField.swift; sourceTree = "<group>"; };
 		A5EF6BD12F4C67AB00E65923 /* KeyboardShortcutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardShortcutView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -205,6 +209,7 @@
 		A5977EEE2F50CB330027F68D /* Repository */ = {
 			isa = PBXGroup;
 			children = (
+				A5CA53372F5F6E12007FCCA1 /* CommitData.swift */,
 				104 /* MainRepositoryView.swift */,
 				105 /* SidebarView.swift */,
 				106 /* StageView.swift */,
@@ -220,6 +225,7 @@
 		A5EF6BCD2F4C671100E65923 /* Common */ = {
 			isa = PBXGroup;
 			children = (
+				A5CA533B2F5F7657007FCCA1 /* ClearableTextField.swift */,
 				A5EF6BD12F4C67AB00E65923 /* KeyboardShortcutView.swift */,
 				121 /* View+Extensions.swift */,
 			);
@@ -310,6 +316,7 @@
 				004 /* MainRepositoryView.swift in Sources */,
 				005 /* SidebarView.swift in Sources */,
 				A50EFDD62F4C782C00112F01 /* RecentView.swift in Sources */,
+				A5CA53382F5F6E12007FCCA1 /* CommitData.swift in Sources */,
 				006 /* StageView.swift in Sources */,
 				007 /* HistoryView.swift in Sources */,
 				008 /* DiffView.swift in Sources */,
@@ -319,6 +326,7 @@
 				011 /* PreferencesView.swift in Sources */,
 				012 /* GitRepository.swift in Sources */,
 				013 /* GitRef.swift in Sources */,
+				A5CA533C2F5F7657007FCCA1 /* ClearableTextField.swift in Sources */,
 				014 /* GitCommit.swift in Sources */,
 				015 /* ChangedFile.swift in Sources */,
 				016 /* GitStash.swift in Sources */,

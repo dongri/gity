@@ -29,7 +29,6 @@ struct MainRepositoryWindow: Scene {
                     .foregroundStyle(.clear)
                     .background(.clear)
                     .task {
-                        try? await Task.sleep(for: .seconds(2.0))
                         if appState.currentRepository == nil {
                             closeRepository()
                         }

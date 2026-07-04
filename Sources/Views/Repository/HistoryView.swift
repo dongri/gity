@@ -12,7 +12,9 @@ struct HistoryView: View {
     let selection: SidebarSelection
     
     @State private var searchText: String = ""
-    @State private var searchMode: SearchMode = .subject
+    @State private var commitData: [CommitData] = []
+    @State private var indexSearchTask: Task<Void, Never>?
+
     @State private var branchFilter: BranchFilterType = .all
     @State private var selectedCommit: GitCommit?
     @State private var diffContent: String = ""
@@ -20,39 +22,17 @@ struct HistoryView: View {
     @State private var isLoadingDiff: Bool = false
     @State private var diffLoadTask: Task<Void, Never>?
     @AppStorage("historyTopPanelRatio") private var topPanelRatio: Double = 0.5
-    
-    enum SearchMode: String, CaseIterable {
-        case subject = "Subject"
-        case author = "Author"
-        case sha = "SHA"
-    }
-    
+        
     enum DetailViewMode: String, CaseIterable {
         case diff = "Diff"
         case tree = "Tree"
     }
     
     private var filteredCommits: [GitCommit] {
-        var commits = repository.commits
-        
-        // Apply search filter
-        if !searchText.isEmpty {
-            let query = searchText.lowercased()
-            commits = commits.filter { commit in
-                switch searchMode {
-                case .subject:
-                    return commit.subject.lowercased().contains(query)
-                case .author:
-                    return commit.author.lowercased().contains(query) ||
-                           commit.authorEmail.lowercased().contains(query)
-                case .sha:
-                    return commit.sha.lowercased().hasPrefix(query) ||
-                           commit.shortSha.lowercased().hasPrefix(query)
-                }
-            }
-        }
-        
-        return commits
+        let query = searchText.lowercased()
+        return commitData
+            .filter { $0.isMatches(query) }
+            .map { $0.commit }
     }
     
     /// Extract the GitRef from the current selection
@@ -91,18 +71,12 @@ struct HistoryView: View {
                         
                         Spacer()
                         
-                        // Search
-                        Picker("", selection: $searchMode) {
-                            ForEach(SearchMode.allCases, id: \.self) { mode in
-                                Text(mode.rawValue).tag(mode)
-                            }
-                        }
-                        .frame(width: 80)
-                        .pointingHandCursor()
-                        
-                        TextField("🔍 Subject, Author, SHA", text: $searchText)
-                            .textFieldStyle(.roundedBorder)
-                            .frame(width: 200)
+                        ClearableTextField(
+                            placeholder: "Subject, Author, SHA",
+                            text: $searchText,
+                            promptSymbol: "🔍",
+                        )
+                        .frame(maxWidth: 400)                                                
                     }
                     .padding(8)
                     .background(Color(nsColor: .controlBackgroundColor))
@@ -172,6 +146,21 @@ struct HistoryView: View {
                     }
                 }
                 .frame(height: bottomHeight)
+            }
+        }
+        .onReceive(repository.$commits) { commits in
+            if indexSearchTask != nil {
+                indexSearchTask?.cancel()
+            }
+            
+            indexSearchTask = Task {
+                let data = commits.map {
+                    CommitData(commit: $0)
+                }
+                await MainActor.run {
+                    commitData = data
+                    indexSearchTask = nil
+                }
             }
         }
         .onChange(of: branchFilter) { _, newFilter in
