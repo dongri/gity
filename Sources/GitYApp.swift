@@ -117,6 +117,13 @@ struct GitYApp: App {
     }
     
     private func closeRepository() {
+        // When the repository was opened externally (gity CLI / Finder),
+        // closing its window should end the session instead of
+        // bringing back the welcome window.
+        if appDelegate.openedViaExternalRequest {
+            NSApp.terminate(nil)
+            return
+        }
         appState.currentRepository = nil
         dismissWindow(id: Window.repository.rawValue)
         openWindow(id: Window.welcome.rawValue)
@@ -125,6 +132,8 @@ struct GitYApp: App {
 
 class AppDelegate: NSObject, NSApplicationDelegate {
     var openRepositoryCallback: ((URL) -> Void)?
+    /// True when a repository was opened from outside the app (gity CLI / Finder)
+    private(set) var openedViaExternalRequest = false
     
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Ensure the app appears in the Dock and has a menu bar
@@ -147,6 +156,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if let repoURL = urls
             .first(where: { $0.hasDirectoryPath })
             .map({ findGitRoot(from: $0) ?? $0 }) {
+            openedViaExternalRequest = true
             openRepositoryCallback(repoURL)
         }
     }

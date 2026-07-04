@@ -345,11 +345,14 @@ class GitRepository: ObservableObject {
     }
     
     private func parseChangedFiles(_ output: String, staged: Bool) -> [ChangedFile] {
+        // Conflicted files appear twice in `git diff --name-status` (U then M);
+        // keep only the first entry per path so the unmerged status wins.
+        var seen = Set<String>()
         return output.components(separatedBy: "\n")
             .filter { !$0.isEmpty }
             .compactMap { line in
                 let parts = line.components(separatedBy: "\t")
-                guard parts.count >= 2 else { return nil }
+                guard parts.count >= 2, seen.insert(parts[1]).inserted else { return nil }
                 let status = FileStatus.from(gitStatus: parts[0])
                 return ChangedFile(path: parts[1], status: status, staged: staged)
             }
