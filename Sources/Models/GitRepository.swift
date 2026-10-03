@@ -550,8 +550,8 @@ class GitRepository: ObservableObject {
         if amend {
             args.append("--amend")
         }
-        let output = await runGitAsync(args)
-        if output.contains("error") || output.contains("fatal") {
+        let (output, status) = await runGitWithStatusAsync(args)
+        if status != 0 {
             throw GitError.commitFailed(output)
         }
         _ = await MainActor.run {
@@ -563,8 +563,8 @@ class GitRepository: ObservableObject {
     }
     
     func checkout(ref: GitRef) async throws {
-        let output = await runGitAsync(["checkout", ref.name])
-        if output.contains("error") || output.contains("fatal") {
+        let (output, status) = await runGitWithStatusAsync(["checkout", ref.name])
+        if status != 0 {
             throw GitError.checkoutFailed(output)
         }
         _ = await MainActor.run {
@@ -581,8 +581,8 @@ class GitRepository: ObservableObject {
         if let ref = ref {
             args.append(ref)
         }
-        let output = await runGitAsync(args)
-        if output.contains("error") || output.contains("fatal") {
+        let (output, status) = await runGitWithStatusAsync(args)
+        if status != 0 {
             throw GitError.branchCreationFailed(output)
         }
         _ = await MainActor.run {
@@ -602,8 +602,8 @@ class GitRepository: ObservableObject {
         if let ref = ref {
             args.append(ref)
         }
-        let output = await runGitAsync(args)
-        if output.contains("error") || output.contains("fatal") {
+        let (output, status) = await runGitWithStatusAsync(args)
+        if status != 0 {
             throw GitError.tagCreationFailed(output)
         }
         _ = await MainActor.run {
@@ -631,8 +631,8 @@ class GitRepository: ObservableObject {
             throw GitError.invalidRef
         }
         
-        let output = await runGitAsync(args)
-        if output.contains("error") || output.contains("fatal") {
+        let (output, status) = await runGitWithStatusAsync(args)
+        if status != 0 {
             throw GitError.deleteFailed(output)
         }
         _ = await MainActor.run {
@@ -863,10 +863,14 @@ class GitRepository: ObservableObject {
     
     /// Async git command execution - runs on background thread
     func runGitAsync(_ arguments: [String]) async -> String {
+        await runGitWithStatusAsync(arguments).output
+    }
+    
+    func runGitWithStatusAsync(_ arguments: [String]) async -> (output: String, status: Int32) {
         let workDir = workingDirectory
         return await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
-                let result = Self.executeGit(arguments: arguments, workingDirectory: workDir)
+                let result = Self.executeGitWithStatus(arguments: arguments, workingDirectory: workDir)
                 continuation.resume(returning: result)
             }
         }
@@ -879,6 +883,10 @@ class GitRepository: ObservableObject {
     
     /// Static helper for running git commands to avoid self capture in closures
     private static func executeGit(arguments: [String], workingDirectory: URL) -> String {
+        executeGitWithStatus(arguments: arguments, workingDirectory: workingDirectory).output
+    }
+    
+    private static func executeGitWithStatus(arguments: [String], workingDirectory: URL) -> (output: String, status: Int32) {
         let process = Process()
         let pipe = Pipe()
         let errorPipe = Pipe()
@@ -886,6 +894,10 @@ class GitRepository: ObservableObject {
         process.executableURL = URL(fileURLWithPath: "/usr/bin/git")
         process.arguments = arguments
         process.currentDirectoryURL = workingDirectory
+        // Background status/diff refreshes must not take index.lock, or a concurrent commit fails.
+        var environment = ProcessInfo.processInfo.environment
+        environment["GIT_OPTIONAL_LOCKS"] = "0"
+        process.environment = environment
         process.standardOutput = pipe
         process.standardError = errorPipe
         
@@ -901,9 +913,9 @@ class GitRepository: ObservableObject {
             let output = String(data: data, encoding: .utf8) ?? ""
             let errorOutput = String(data: errorData, encoding: .utf8) ?? ""
             
-            return output + errorOutput
+            return (output + errorOutput, process.terminationStatus)
         } catch {
-            return "Error: \(error.localizedDescription)"
+            return ("Error: \(error.localizedDescription)", -1)
         }
     }
     

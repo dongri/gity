@@ -416,6 +416,8 @@ struct StageView: View {
     }
     
     private func commitChanges() {
+        // Key repeat on Cmd+Return can fire again before the button re-renders as disabled.
+        guard canCommit else { return }
         isCommitting = true
         Task {
             do {
